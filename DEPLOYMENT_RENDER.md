@@ -25,8 +25,8 @@ If you want to manually create and configure each service separately:
 ### 1. 🚀 Backend API (Web Service)
 - **Service Type**: **Web Service**
 - **Runtime**: **Node**
-- **Build Command**: `npm install`
-- **Start Command**: `npm run start:backend`
+- **Build Command**: `npm install && npm run build:server`
+- **Start Command**: `node dist-server/server.mjs`
 - **Health Check Path**: `/healthz`
 - **Environment Variables**:
   ```env

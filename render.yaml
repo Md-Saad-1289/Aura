@@ -7,8 +7,8 @@ services:
     runtime: node
     plan: free
     region: singapore
-    buildCommand: npm install
-    startCommand: npm run start:backend
+    buildCommand: npm install && npm run build:server
+    startCommand: node dist-server/server.mjs
     healthCheckPath: /healthz
     envVars:
       - key: NODE_ENV

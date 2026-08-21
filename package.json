@@ -9,9 +9,9 @@
     "build:frontend": "vite build",
     "build:admin": "VITE_APP_MODE=admin vite build --outDir dist-admin",
     "build:server": "esbuild server.ts --bundle --platform=node --format=esm --outfile=dist-server/server.mjs --external:mongoose --external:express --external:cloudinary --external:jsonwebtoken --external:cors --external:dotenv",
-    "start": "tsx server.ts",
-    "start:backend": "tsx server.ts",
-    "start:prod": "node dist-server/server.mjs",
+    "start": "node dist-server/server.mjs",
+    "start:backend": "npm run build:server && node dist-server/server.mjs",
+    "start:dev": "tsx server.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist dist-admin dist-server",
     "lint": "tsc --noEmit"
