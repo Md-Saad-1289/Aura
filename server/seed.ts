@@ -70,7 +70,7 @@ export async function seedDatabaseIfEmpty() {
       await ActivityModel.insertMany(INITIAL_ACTIVITY_LOGS as any[]);
     }
 
-    console.log('✨ MongoDB Atlas BlinkUpZ data verified and ready.');
+    console.log('✨ MongoDB Atlas aura data verified and ready.');
   } catch (error) {
     console.error('Error during database seed:', error);
   }

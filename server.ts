@@ -1,7 +1,7 @@
 import path from 'path';
 import express from 'express';
-import { createExpressApp } from './server/app';
-import { CONFIG } from './server/config';
+import { createExpressApp } from './backend/app';
+import { CONFIG } from './backend/config';
 
 const app = createExpressApp();
 const port = CONFIG.PORT || 3000;

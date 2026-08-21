@@ -5,51 +5,105 @@ import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 
 import { StorefrontView, AdminView, Product, Order } from './types';
-import { DemoSwitcherBar } from './components/common/DemoSwitcherBar';
-import { Header } from './components/common/Header';
-import { Footer } from './components/common/Footer';
-import { SearchModal } from './components/common/SearchModal';
-import { AuthModal } from './components/common/AuthModal';
-import { CartDrawer } from './components/common/CartDrawer';
-import { QuickViewModal } from './components/common/QuickViewModal';
+import { DemoSwitcherBar, Header, Footer, SearchModal, AuthModal, CartDrawer, QuickViewModal } from './common';
 
-// Customer Pages
-import { HomePage } from './components/customer/HomePage';
-import { ShopPage } from './components/customer/ShopPage';
-import { CategoriesPage } from './components/customer/CategoriesPage';
-import { ProductDetailPage } from './components/customer/ProductDetailPage';
-import { CartPage } from './components/customer/CartPage';
-import { CheckoutPage } from './components/customer/CheckoutPage';
-import { OrderConfirmationPage } from './components/customer/OrderConfirmationPage';
-import { OrderTrackingPage } from './components/customer/OrderTrackingPage';
-import { AccountPage } from './components/customer/AccountPage';
-import { AboutPage } from './components/customer/AboutPage';
-import { ContactPage } from './components/customer/ContactPage';
+// Frontend / Customer Pages
+import {
+  HomePage,
+  ShopPage,
+  CategoriesPage,
+  ProductDetailPage,
+  CartPage,
+  CheckoutPage,
+  OrderConfirmationPage,
+  OrderTrackingPage,
+  AccountPage,
+  AboutPage,
+  ContactPage
+} from './frontend';
 
 // Admin Suite
-import { AdminLayout } from './components/admin/AdminLayout';
-import { DashboardOverview } from './components/admin/DashboardOverview';
-import { ProductManagement } from './components/admin/ProductManagement';
-import { CategoryManagement } from './components/admin/CategoryManagement';
-import { OrderManagement } from './components/admin/OrderManagement';
-import { CustomerManagement } from './components/admin/CustomerManagement';
-import { ReportsAnalytics } from './components/admin/ReportsAnalytics';
-import { CouponManagement } from './components/admin/CouponManagement';
-import { ReviewManagement } from './components/admin/ReviewManagement';
-import { ShippingManagement } from './components/admin/ShippingManagement';
-import { SettingsManagement } from './components/admin/SettingsManagement';
-import { AdminUserManagement } from './components/admin/AdminUserManagement';
+import {
+  AdminLayout,
+  DashboardOverview,
+  ProductManagement,
+  CategoryManagement,
+  OrderManagement,
+  CustomerManagement,
+  ReportsAnalytics,
+  CouponManagement,
+  ReviewManagement,
+  ShippingManagement,
+  SettingsManagement,
+  AdminUserManagement
+} from './admin';
 
 const MainApp: React.FC = () => {
-  const [mode, setMode] = useState<'customer' | 'admin'>('customer');
-  const [storeView, setStoreView] = useState<StorefrontView>('home');
-  const [adminView, setAdminView] = useState<AdminView>('dashboard');
+  // Check if environment or URL specifies admin mode
+  const isEnvAdmin = (import.meta as any).env?.VITE_APP_MODE === 'admin';
+  const getInitialMode = (): 'customer' | 'admin' => {
+    if (isEnvAdmin) return 'admin';
+    if (typeof window !== 'undefined') {
+      const search = new URLSearchParams(window.location.search);
+      const pathname = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (search.get('mode') === 'admin' || search.get('app') === 'admin' || pathname.startsWith('/admin') || hash.includes('admin')) {
+        return 'admin';
+      }
+    }
+    return 'customer';
+  };
+
+  const getInitialStoreView = (): StorefrontView => {
+    if (typeof window !== 'undefined') {
+      const search = new URLSearchParams(window.location.search);
+      const view = search.get('view') as StorefrontView;
+      const validViews: StorefrontView[] = [
+        'home', 'shop', 'categories', 'product-detail', 'cart', 'checkout',
+        'order-confirmation', 'order-tracking', 'account', 'about', 'contact'
+      ];
+      if (view && validViews.includes(view)) return view;
+    }
+    return 'home';
+  };
+
+  const getInitialAdminView = (): AdminView => {
+    if (typeof window !== 'undefined') {
+      const search = new URLSearchParams(window.location.search);
+      const view = search.get('admin_view') as AdminView;
+      const validViews: AdminView[] = [
+        'dashboard', 'products', 'categories', 'orders', 'customers',
+        'reports', 'coupons', 'reviews', 'shipping', 'settings', 'admins'
+      ];
+      if (view && validViews.includes(view)) return view;
+    }
+    return 'dashboard';
+  };
+
+  const [mode, setMode] = useState<'customer' | 'admin'>(getInitialMode);
+  const [storeView, setStoreView] = useState<StorefrontView>(getInitialStoreView);
+  const [adminView, setAdminView] = useState<AdminView>(getInitialAdminView);
 
   // Navigation Parameters
-  const [activeCategoryId, setActiveCategoryId] = useState<string | undefined>(undefined);
-  const [activeProductId, setActiveProductId] = useState<string | undefined>(undefined);
+  const [activeCategoryId, setActiveCategoryId] = useState<string | undefined>(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('category') || undefined;
+    }
+    return undefined;
+  });
+  const [activeProductId, setActiveProductId] = useState<string | undefined>(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('product') || undefined;
+    }
+    return undefined;
+  });
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
-  const [trackingOrderNumber, setTrackingOrderNumber] = useState<string | undefined>(undefined);
+  const [trackingOrderNumber, setTrackingOrderNumber] = useState<string | undefined>(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('track') || undefined;
+    }
+    return undefined;
+  });
 
   // Modals
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -57,7 +111,7 @@ const MainApp: React.FC = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
-  // Scroll to top upon route change
+  // Scroll to top upon route change & optionally sync URL
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [storeView, adminView, mode]);

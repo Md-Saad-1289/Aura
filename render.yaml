@@ -1,0 +1,73 @@
+services:
+  # -------------------------------------------------------------
+  # 1. BACKEND API SERVICE (Node.js / Express / MongoDB Atlas)
+  # -------------------------------------------------------------
+  - type: web
+    name: aura-ecommerce-backend
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm run start:backend
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: MONGODB_URL
+        value: mongodb+srv://mdsaad1289:CxhvPcMnaJFLhBM6@cluster0.20jynkx.mongodb.net/aura
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLOUDINARY_CLOUD_NAME
+        value: dhptequpx
+      - key: CLOUDINARY_API_KEY
+        value: 723835296947698
+      - key: CLOUDINARY_API_SECRET
+        value: 9fQaZxh79L2wjvDXuSU9shCtD1I
+
+  # -------------------------------------------------------------
+  # 2. FRONTEND STOREFRONT (Customer E-Commerce Web App)
+  # -------------------------------------------------------------
+  - type: web
+    name: aura-ecommerce-frontend
+    runtime: static
+    plan: free
+    buildCommand: npm install && npm run build:frontend
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: aura-ecommerce-backend
+          property: host
+      - key: VITE_HIDE_DEMO_BAR
+        value: "false"
+
+  # -------------------------------------------------------------
+  # 3. ADMIN DASHBOARD (Store Management & Analytics Portal)
+  # -------------------------------------------------------------
+  - type: web
+    name: aura-ecommerce-admin
+    runtime: static
+    plan: free
+    buildCommand: npm install && npm run build:admin
+    staticPublishPath: ./dist-admin
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: aura-ecommerce-backend
+          property: host
+      - key: VITE_APP_MODE
+        value: "admin"
+      - key: VITE_HIDE_DEMO_BAR
+        value: "false"

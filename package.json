@@ -6,9 +6,14 @@
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
+    "build:frontend": "vite build",
+    "build:admin": "VITE_APP_MODE=admin vite build --outDir dist-admin",
+    "build:server": "esbuild server.ts --bundle --platform=node --format=esm --outfile=dist-server/server.mjs --external:mongoose --external:express --external:cloudinary --external:jsonwebtoken --external:cors --external:dotenv",
     "start": "tsx server.ts",
+    "start:backend": "tsx server.ts",
+    "start:prod": "node dist-server/server.mjs",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
+    "clean": "rm -rf dist dist-admin dist-server",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

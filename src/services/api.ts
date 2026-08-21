@@ -10,7 +10,9 @@ import {
   UserRole,
 } from '../types';
 
-const API_BASE = '/api';
+// Dynamic API base URL: supports standalone frontend/admin deployments connecting to Render backend
+const rawBase = (import.meta as any).env?.VITE_API_URL || '';
+const API_BASE = rawBase ? `${rawBase.replace(/\/$/, '')}/api` : '/api';
 
 function getAuthToken(): string | null {
   return localStorage.getItem('auth_token');

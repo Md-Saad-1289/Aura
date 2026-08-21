@@ -2,7 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, Plugin } from 'vite';
-import { createExpressApp } from './server/app';
+import { createExpressApp } from './backend/app';
 
 function expressApiPlugin(): Plugin {
   return {

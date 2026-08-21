@@ -17,7 +17,7 @@ export async function connectDB(): Promise<boolean> {
   }
 
   try {
-    console.log('Connecting to MongoDB Atlas at BlinkUpZ cluster...');
+    console.log('Connecting to MongoDB Atlas at aura cluster...');
     connectionPromise = mongoose.connect(CONFIG.MONGODB_URL, {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
@@ -25,7 +25,7 @@ export async function connectDB(): Promise<boolean> {
 
     await connectionPromise;
     isConnected = true;
-    console.log('✅ Connected to MongoDB Atlas successfully [Database: BlinkUpZ]');
+    console.log('✅ Connected to MongoDB Atlas successfully [Database: aura]');
     return true;
   } catch (error) {
     console.error('❌ MongoDB Connection Error:', error);
