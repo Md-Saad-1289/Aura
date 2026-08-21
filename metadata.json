@@ -1,0 +1,8 @@
+{
+  "name": "AURA | Modern Luxury E-Commerce & Admin Platform",
+  "description": "A high-performance, modern, minimal premium e-commerce storefront and enterprise-grade admin dashboard with full product management, order workflow, inventory tracking, analytics, and customer portal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
