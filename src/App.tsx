@@ -18,6 +18,7 @@ import {
   OrderConfirmationPage,
   OrderTrackingPage,
   AccountPage,
+  WishlistPage,
   AboutPage,
   ContactPage
 } from './frontend';
@@ -233,6 +234,13 @@ const MainApp: React.FC = () => {
                 onNavigate={handleNavigateStorefront}
                 onTrackOrder={handleTrackOrderFromHistory}
                 onSwitchToAdmin={() => handleNavigateAdmin('dashboard')}
+              />
+            )}
+
+            {storeView === 'wishlist' && (
+              <WishlistPage
+                onNavigate={handleNavigateStorefront}
+                onQuickView={(product) => setQuickViewProduct(product)}
               />
             )}
 

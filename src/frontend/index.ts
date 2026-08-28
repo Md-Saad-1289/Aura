@@ -10,3 +10,4 @@ export { OrderTrackingPage } from './OrderTrackingPage';
 export { ProductCard } from './ProductCard';
 export { ProductDetailPage } from './ProductDetailPage';
 export { ShopPage } from './ShopPage';
+export { WishlistPage } from './WishlistPage';
