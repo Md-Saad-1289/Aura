@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { Product, CartItem, SelectedVariant, Coupon, ShippingMethod } from '../types';
 import { useStore } from './StoreContext';
+import { useAuth } from './AuthContext';
 
 interface CartContextType {
   cart: CartItem[];
@@ -28,36 +29,64 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = 'aura_cart_items_v1';
-const COUPON_STORAGE_KEY = 'aura_applied_coupon_v1';
+const getCartStorageKey = (userId?: string) => {
+  return userId ? `aura_cart_user_${userId}` : 'aura_cart_guest';
+};
+
+const getCouponStorageKey = (userId?: string) => {
+  return userId ? `aura_coupon_user_${userId}` : 'aura_coupon_guest';
+};
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { shippingMethods, settings, validateCoupon } = useStore();
+  const { currentUser } = useAuth();
+  const userId = currentUser?.id;
+  const currentCartKey = getCartStorageKey(userId);
+  const currentCouponKey = getCouponStorageKey(userId);
 
   const [cart, setCart] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem(CART_STORAGE_KEY);
+    const saved = localStorage.getItem(currentCartKey);
     return saved ? JSON.parse(saved) : [];
   });
 
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(() => {
-    const saved = localStorage.getItem(COUPON_STORAGE_KEY);
+    const saved = localStorage.getItem(currentCouponKey);
     return saved ? JSON.parse(saved) : null;
   });
 
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>(shippingMethods[0]);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
 
-  useEffect(() => {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-  }, [cart]);
+  const activeCartKeyRef = useRef(currentCartKey);
+  const activeCouponKeyRef = useRef(currentCouponKey);
 
+  // Synchronize cart & coupon whenever the authenticated user changes (login, logout, switch account, register)
+  useEffect(() => {
+    const newCartKey = getCartStorageKey(userId);
+    const newCouponKey = getCouponStorageKey(userId);
+    activeCartKeyRef.current = newCartKey;
+    activeCouponKeyRef.current = newCouponKey;
+
+    const savedCart = localStorage.getItem(newCartKey);
+    setCart(savedCart ? JSON.parse(savedCart) : []);
+
+    const savedCoupon = localStorage.getItem(newCouponKey);
+    setAppliedCoupon(savedCoupon ? JSON.parse(savedCoupon) : null);
+  }, [userId]);
+
+  // Persist cart items for the active user key
+  useEffect(() => {
+    localStorage.setItem(activeCartKeyRef.current, JSON.stringify(cart));
+  }, [cart, userId]);
+
+  // Persist applied coupon for the active user key
   useEffect(() => {
     if (appliedCoupon) {
-      localStorage.setItem(COUPON_STORAGE_KEY, JSON.stringify(appliedCoupon));
+      localStorage.setItem(activeCouponKeyRef.current, JSON.stringify(appliedCoupon));
     } else {
-      localStorage.removeItem(COUPON_STORAGE_KEY);
+      localStorage.removeItem(activeCouponKeyRef.current);
     }
-  }, [appliedCoupon]);
+  }, [appliedCoupon, userId]);
 
   const itemCount = useMemo(() => {
     return cart.reduce((total, item) => total + item.quantity, 0);

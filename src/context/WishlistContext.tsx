@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Product } from '../types';
+import { useAuth } from './AuthContext';
 
 interface WishlistContextType {
   wishlist: Product[];
@@ -12,17 +13,34 @@ interface WishlistContextType {
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
-const WISHLIST_STORAGE_KEY = 'aura_wishlist_items_v1';
+const getWishlistStorageKey = (userId?: string) => {
+  return userId ? `aura_wishlist_user_${userId}` : 'aura_wishlist_guest';
+};
 
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser } = useAuth();
+  const userId = currentUser?.id;
+  const currentKey = getWishlistStorageKey(userId);
+
   const [wishlist, setWishlist] = useState<Product[]>(() => {
-    const saved = localStorage.getItem(WISHLIST_STORAGE_KEY);
+    const saved = localStorage.getItem(currentKey);
     return saved ? JSON.parse(saved) : [];
   });
 
+  const activeKeyRef = useRef(currentKey);
+
+  // Synchronize when the authenticated user changes (login, logout, switch account, register)
   useEffect(() => {
-    localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlist));
-  }, [wishlist]);
+    const newKey = getWishlistStorageKey(userId);
+    activeKeyRef.current = newKey;
+    const saved = localStorage.getItem(newKey);
+    setWishlist(saved ? JSON.parse(saved) : []);
+  }, [userId]);
+
+  // Persist items for the active user key
+  useEffect(() => {
+    localStorage.setItem(activeKeyRef.current, JSON.stringify(wishlist));
+  }, [wishlist, userId]);
 
   const isInWishlist = (productId: string): boolean => {
     return wishlist.some(item => item.id === productId);
@@ -73,3 +91,4 @@ export const useWishlist = (): WishlistContextType => {
   }
   return context;
 };
+
