@@ -195,16 +195,6 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, onTrackOrd
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            {isAdminUser && onSwitchToAdmin && (
-              <button
-                onClick={onSwitchToAdmin}
-                className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-zinc-950 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Open Admin Portal</span>
-              </button>
-            )}
-
             <button
               onClick={logout}
               className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 rounded-xl text-xs font-semibold border border-zinc-700 flex items-center gap-1.5 transition-colors"

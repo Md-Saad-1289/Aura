@@ -205,15 +205,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSwitchToAdmin }) =
         <div className="flex items-center gap-6">
           <span className="hover:text-zinc-400 cursor-pointer">Privacy Policy</span>
           <span className="hover:text-zinc-400 cursor-pointer">Terms of Service</span>
-          {onSwitchToAdmin && (
-            <button
-              onClick={onSwitchToAdmin}
-              className="inline-flex items-center gap-1.5 text-amber-500 hover:text-amber-400 font-semibold transition-colors"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Admin Portal</span>
-            </button>
-          )}
         </div>
       </div>
     </footer>

@@ -300,18 +300,6 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {/* Admin Quick Entry Button if Admin/Manager */}
-            {isAdmin && onSwitchToAdmin && (
-              <button
-                onClick={onSwitchToAdmin}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300/80 text-amber-900 rounded-xl text-xs font-bold transition-all shadow-2xs group"
-                title="Enter Admin Management Suite"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-amber-600 group-hover:rotate-12 transition-transform" />
-                <span>Admin Suite</span>
-              </button>
-            )}
-
             {/* User Account / Profile Menu */}
             <div className="relative">
               {isAuthenticated ? (
@@ -502,18 +490,6 @@ export const Header: React.FC<HeaderProps> = ({
                 ))}
               </select>
             </div>
-
-            {isAdmin && onSwitchToAdmin && (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onSwitchToAdmin();
-                }}
-                className="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200"
-              >
-                Admin Dashboard →
-              </button>
-            )}
           </div>
         </div>
       )}
