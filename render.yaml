@@ -1,7 +1,7 @@
 services:
-  # -------------------------------------------------------------
+  # ---------------------------------------------------------------
   # 1. BACKEND API SERVICE (Node.js / Express / MongoDB Atlas)
-  # -------------------------------------------------------------
+  # ---------------------------------------------------------------
   - type: web
     name: aura-ecommerce-backend
     runtime: node
@@ -26,13 +26,14 @@ services:
       - key: CLOUDINARY_API_SECRET
         value: 9fQaZxh79L2wjvDXuSU9shCtD1I
 
-  # -------------------------------------------------------------
+  # ---------------------------------------------------------------
   # 2. FRONTEND STOREFRONT (Customer E-Commerce Web App)
-  # -------------------------------------------------------------
+  # ---------------------------------------------------------------
   - type: web
     name: aura-ecommerce-frontend
     runtime: static
     plan: free
+    region: singapore
     buildCommand: npm install && npm run build:frontend
     staticPublishPath: ./dist
     routes:
@@ -45,16 +46,19 @@ services:
           type: web
           name: aura-ecommerce-backend
           property: host
+      - key: VITE_APP_MODE
+        value: "customer"
       - key: VITE_HIDE_DEMO_BAR
         value: "false"
 
-  # -------------------------------------------------------------
+  # ---------------------------------------------------------------
   # 3. ADMIN DASHBOARD (Store Management & Analytics Portal)
-  # -------------------------------------------------------------
+  # ---------------------------------------------------------------
   - type: web
     name: aura-ecommerce-admin
     runtime: static
     plan: free
+    region: singapore
     buildCommand: npm install && npm run build:admin
     staticPublishPath: ./dist-admin
     routes:

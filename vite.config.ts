@@ -15,12 +15,20 @@ function expressApiPlugin(): Plugin {
 }
 
 export default defineConfig(() => {
+  const isAdmin = process.env.VITE_APP_MODE === 'admin';
+  const outDir = isAdmin ? 'dist-admin' : 'dist';
+
   return {
     plugins: [expressApiPlugin(), react(), tailwindcss()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
       },
+    },
+    build: {
+      outDir: outDir,
+      emptyOutDir: true,
+      sourcemap: false,
     },
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
