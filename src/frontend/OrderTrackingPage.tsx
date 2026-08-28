@@ -97,23 +97,6 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
             Locate
           </button>
         </form>
-
-        {/* Quick Demo Order Pills */}
-        <div className="flex items-center justify-center gap-2 text-[11px] text-zinc-400 flex-wrap">
-          <span>Try Demo Orders:</span>
-          {orders.slice(0, 3).map((o) => (
-            <button
-              key={o.id}
-              onClick={() => {
-                setQuery(o.orderNumber);
-                handleSearch(o.orderNumber);
-              }}
-              className="px-2 py-0.5 bg-zinc-100 text-zinc-700 hover:bg-zinc-200 rounded font-mono transition-colors"
-            >
-              {o.orderNumber} ({o.status})
-            </button>
-          ))}
-        </div>
       </div>
 
       {notFound && (

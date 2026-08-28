@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { X, Lock, Mail, User as UserIcon, Shield, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, Lock, Mail, User as UserIcon, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { UserRole } from '../types';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,7 +17,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onSuccess,
   onSwitchToAdmin
 }) => {
-  const { login, register, switchUser } = useAuth();
+  const { login, register } = useAuth();
   const [tab, setTab] = useState<'login' | 'register'>(initialTab);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -34,7 +33,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setError(null);
     setSuccessMsg(null);
     setLoading(true);
-
     try {
       if (tab === 'login') {
         const result = await login(email, password);
@@ -73,18 +71,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickPersona = (role: UserRole) => {
-    switchUser(role);
-    onClose();
-    if (role === 'super_admin' || role === 'manager') {
-      if (onSwitchToAdmin) {
-        onSwitchToAdmin();
-        return;
-      }
-    }
-    if (onSuccess) onSuccess();
   };
 
   return (
@@ -224,41 +210,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {loading ? 'Processing...' : tab === 'login' ? 'Sign In to Account' : 'Create Account'}
             </button>
           </form>
-
-          {/* Quick Demo Switcher Strip */}
-          <div className="pt-4 border-t border-zinc-150">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 text-center mb-2.5">
-              1-Click Demo Quick Login
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickPersona('customer')}
-                className="p-2 border border-zinc-200 hover:border-zinc-400 rounded-lg text-center bg-zinc-50 hover:bg-white transition-colors text-[11px]"
-              >
-                <span className="font-semibold text-zinc-900 block">Jane Doe</span>
-                <span className="text-[10px] text-zinc-500">Customer</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickPersona('super_admin')}
-                className="p-2 border border-amber-200 bg-amber-50/60 hover:bg-amber-100 rounded-lg text-center transition-colors text-[11px]"
-              >
-                <span className="font-semibold text-amber-950 block">Elena R.</span>
-                <span className="text-[10px] text-amber-700">Super Admin</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickPersona('manager')}
-                className="p-2 border border-blue-200 bg-blue-50/60 hover:bg-blue-100 rounded-lg text-center transition-colors text-[11px]"
-              >
-                <span className="font-semibold text-blue-950 block">Marcus V.</span>
-                <span className="text-[10px] text-blue-700">Manager</span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

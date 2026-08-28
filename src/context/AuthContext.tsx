@@ -35,10 +35,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         return JSON.parse(saved);
       } catch (e) {
-        return INITIAL_USERS[2]; // Default to Jane Doe (Customer)
+        return null;
       }
     }
-    return INITIAL_USERS[2]; // Default to Jane Doe (Customer)
+    return null;
   });
 
   useEffect(() => {

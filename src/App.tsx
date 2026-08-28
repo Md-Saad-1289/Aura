@@ -5,7 +5,7 @@ import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 
 import { StorefrontView, AdminView, Product, Order } from './types';
-import { DemoSwitcherBar, Header, Footer, SearchModal, AuthModal, CartDrawer, QuickViewModal } from './common';
+import { Header, Footer, SearchModal, AuthModal, CartDrawer, QuickViewModal } from './common';
 
 // Frontend / Customer Pages
 import {
@@ -140,19 +140,6 @@ const MainApp: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white text-zinc-900 flex flex-col antialiased selection:bg-zinc-950 selection:text-white">
-      {/* Top Interactive Demo Switcher Bar */}
-      <DemoSwitcherBar
-        mode={mode}
-        onSwitchMode={(newMode) => {
-          setMode(newMode);
-          if (newMode === 'admin') {
-            setAdminView('dashboard');
-          } else {
-            setStoreView('home');
-          }
-        }}
-      />
-
       {/* RENDER ADMIN OR CUSTOMER */}
       {mode === 'admin' ? (
         <AdminLayout

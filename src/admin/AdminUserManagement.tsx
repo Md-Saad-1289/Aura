@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Users, Plus, Key, Lock, CheckCircle, ShieldAlert, X } from 'lucide-react';
+import { Shield, Users, Plus, Key, Lock, CheckCircle, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 
@@ -47,7 +47,7 @@ const AUDIT_LOGS = [
 ];
 
 export const AdminUserManagement: React.FC = () => {
-  const { currentUser, switchDemoRole } = useAuth();
+  const { currentUser } = useAuth();
   const [team, setTeam] = useState<TeamMember[]>(INITIAL_TEAM);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newName, setNewName] = useState('');
@@ -92,33 +92,6 @@ export const AdminUserManagement: React.FC = () => {
           <Plus className="w-4 h-4" />
           <span>Invite Team Specialist</span>
         </button>
-      </div>
-
-      {/* Role Switcher Demo Box */}
-      <div className="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-6 space-y-3">
-        <div className="flex items-center gap-2 text-amber-900 font-bold text-xs">
-          <ShieldAlert className="w-4 h-4 text-amber-600" />
-          <span>Live Role Simulation Playground</span>
-        </div>
-        <p className="text-xs text-amber-800 leading-relaxed">
-          Switch the active preview session to test RBAC permissions. (e.g. <strong>Support</strong> cannot alter store settings or delete products; <strong>Manager</strong> can fulfill orders & products but cannot manage staff).
-        </p>
-
-        <div className="flex flex-wrap gap-2 pt-1">
-          {(['admin', 'manager', 'support', 'customer'] as UserRole[]).map((r) => (
-            <button
-              key={r}
-              onClick={() => switchDemoRole(r)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors ${
-                currentUser?.role === r
-                  ? 'bg-zinc-950 text-white'
-                  : 'bg-white border border-amber-300 text-amber-950 hover:bg-amber-100'
-              }`}
-            >
-              Test as {r}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Team Members List */}
