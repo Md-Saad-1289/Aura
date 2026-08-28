@@ -151,18 +151,18 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, onTrackOrd
     );
   }
 
-  // Filter orders for this user or show store sample orders
+  // Filter orders for this user ONLY (no mock fallback for new accounts)
   const userOrders = orders.filter(
-    o => o.customer.id === currentUser.id || o.customer.email.toLowerCase() === currentUser.email.toLowerCase()
+    o => o.customer?.id === currentUser.id || (o.customer?.email && o.customer.email.toLowerCase() === currentUser.email.toLowerCase())
   );
-  const displayOrders = userOrders.length > 0 ? userOrders : orders.slice(0, 3);
+  const displayOrders = userOrders;
 
-  // User reviews
+  // User reviews (for this user only)
   const userReviews = reviews.filter(
-    r => r.userId === currentUser.id || r.userName.toLowerCase() === currentUser.name.toLowerCase()
+    r => r.userId === currentUser.id || (r.userName && r.userName.toLowerCase() === currentUser.name.toLowerCase())
   );
 
-  // Total lifetime spend calculation
+  // Total lifetime spend calculation based strictly on user's actual orders
   const totalLifetimeSpent = displayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
 
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -286,20 +286,26 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, onTrackOrd
                 <h1 className="text-xl sm:text-2xl font-serif font-bold text-zinc-100 tracking-tight">
                   {currentUser.name}
                 </h1>
-                <span className="bg-amber-400/15 text-amber-300 border border-amber-400/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-2xs">
-                  <Sparkles className="w-2.5 h-2.5 text-amber-400" />
-                  <span>
-                    {currentUser.role === 'customer' ? 'Atelier Noir Member' : currentUser.role.toUpperCase()}
+                {currentUser.role && currentUser.role !== 'customer' && (
+                  <span className="bg-amber-400/15 text-amber-300 border border-amber-400/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-2xs">
+                    <Sparkles className="w-2.5 h-2.5 text-amber-400" />
+                    <span>{currentUser.role.replace('_', ' ').toUpperCase()}</span>
                   </span>
-                </span>
+                )}
               </div>
 
               <p className="text-xs text-zinc-400 font-mono">{currentUser.email}</p>
 
               <div className="flex items-center gap-3 text-[11px] text-zinc-400 pt-0.5">
-                <span>Member since {new Date(currentUser.createdAt || '2024-01-01').toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</span>
-                <span>•</span>
-                <span className="text-emerald-400 font-medium">Verified Atelier Account</span>
+                <span>
+                  Member since {new Date(currentUser.createdAt || Date.now()).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                </span>
+                {currentUser.role && currentUser.role !== 'customer' && (
+                  <>
+                    <span>•</span>
+                    <span className="text-emerald-400 font-medium capitalize">{currentUser.role.replace('_', ' ')}</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -370,7 +376,7 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, onTrackOrd
         <div className="lg:col-span-3 space-y-1">
           {[
             { id: 'orders', label: 'Order History', icon: Package, count: displayOrders.length },
-            { id: 'addresses', label: 'Saved Addresses', icon: MapPin, count: currentUser.addresses?.length || 1 },
+            { id: 'addresses', label: 'Saved Addresses', icon: MapPin, count: (currentUser.addresses || []).length },
             { id: 'wishlist', label: 'Wishlist Artifacts', icon: Heart, count: wishlist.length },
             { id: 'reviews', label: 'Verified Reviews', icon: Star, count: userReviews.length },
             { id: 'settings', label: 'Profile & Security', icon: Settings }
@@ -573,53 +579,66 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, onTrackOrd
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(currentUser.addresses || []).map((addr, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-5 rounded-2xl border transition-all relative flex flex-col justify-between space-y-3 ${
-                      addr.isDefault
-                        ? 'bg-zinc-50/80 border-zinc-950/40 shadow-xs'
-                        : 'bg-white border-zinc-200 hover:border-zinc-300'
-                    }`}
+              {(currentUser.addresses || []).length === 0 ? (
+                <div className="text-center py-16 bg-zinc-50 rounded-3xl border border-zinc-200 space-y-3">
+                  <MapPin className="w-8 h-8 text-zinc-400 mx-auto" />
+                  <p className="text-xs text-zinc-500">No saved addresses yet.</p>
+                  <button
+                    onClick={() => setShowAddressModal(true)}
+                    className="px-5 py-2 bg-zinc-950 text-white rounded-xl text-xs font-semibold hover:bg-zinc-850"
                   >
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-bold text-xs text-zinc-900">{addr.fullName}</span>
-                        {addr.isDefault ? (
-                          <span className="text-[10px] bg-zinc-950 text-white px-2.5 py-0.5 rounded-full font-semibold uppercase">
-                            Default Address
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => handleSetDefaultAddress(idx)}
-                            className="text-[10px] text-zinc-500 hover:text-zinc-900 font-semibold"
-                          >
-                            Set as default
-                          </button>
-                        )}
+                    Add Your First Address
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(currentUser.addresses || []).map((addr, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-5 rounded-2xl border transition-all relative flex flex-col justify-between space-y-3 ${
+                        addr.isDefault
+                          ? 'bg-zinc-50/80 border-zinc-950/40 shadow-xs'
+                          : 'bg-white border-zinc-200 hover:border-zinc-300'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold text-xs text-zinc-900">{addr.fullName}</span>
+                          {addr.isDefault ? (
+                            <span className="text-[10px] bg-zinc-950 text-white px-2.5 py-0.5 rounded-full font-semibold uppercase">
+                              Default Address
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleSetDefaultAddress(idx)}
+                              className="text-[10px] text-zinc-500 hover:text-zinc-900 font-semibold"
+                            >
+                              Set as default
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-xs text-zinc-600">{addr.street}</p>
+                        {addr.apartment && <p className="text-xs text-zinc-600">{addr.apartment}</p>}
+                        <p className="text-xs text-zinc-600">
+                          {addr.city}, {addr.state} {addr.postalCode}
+                        </p>
+                        <p className="text-xs text-zinc-600">{addr.country}</p>
+                        {addr.phone && <p className="text-[11px] text-zinc-400 mt-2 font-mono">{addr.phone}</p>}
                       </div>
-                      <p className="text-xs text-zinc-600">{addr.street}</p>
-                      {addr.apartment && <p className="text-xs text-zinc-600">{addr.apartment}</p>}
-                      <p className="text-xs text-zinc-600">
-                        {addr.city}, {addr.state} {addr.postalCode}
-                      </p>
-                      <p className="text-xs text-zinc-600">{addr.country}</p>
-                      {addr.phone && <p className="text-[11px] text-zinc-400 mt-2 font-mono">{addr.phone}</p>}
-                    </div>
 
-                    <div className="flex justify-end gap-2 pt-2 border-t border-zinc-150">
-                      <button
-                        onClick={() => handleDeleteAddress(idx)}
-                        className="text-zinc-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
-                        title="Delete address"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex justify-end gap-2 pt-2 border-t border-zinc-150">
+                        <button
+                          onClick={() => handleDeleteAddress(idx)}
+                          className="text-zinc-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
+                          title="Delete address"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
