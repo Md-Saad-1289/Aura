@@ -27,6 +27,29 @@ export const PrintInvoiceModal: React.FC<PrintInvoiceModalProps> = ({ order, onC
 
   if (!order) return null;
 
+  const getPaymentMethodDisplay = (paymentMethod: any): string => {
+    if (!paymentMethod) return 'Standard';
+    if (typeof paymentMethod === 'string') {
+      if (paymentMethod === 'cash_on_delivery') return 'Cash on Delivery';
+      if (paymentMethod === 'credit_card' || paymentMethod === 'stripe') return 'Credit Card';
+      if (paymentMethod === 'apple_pay') return 'Apple Pay';
+      if (paymentMethod === 'google_pay') return 'Google Pay';
+      if (paymentMethod === 'bank_transfer') return 'Wire Transfer';
+      return paymentMethod.replace(/_/g, ' ');
+    }
+    if (typeof paymentMethod === 'object') {
+      const type = paymentMethod.type || 'credit_card';
+      const last4 = paymentMethod.last4 ? ` (•••• ${paymentMethod.last4})` : '';
+      if (type === 'cash_on_delivery') return 'Cash on Delivery';
+      if (type === 'credit_card' || type === 'card' || type === 'stripe') return `Card${last4}`;
+      if (type === 'apple_pay') return 'Apple Pay';
+      if (type === 'google_pay') return 'Google Pay';
+      if (type === 'bank_transfer') return 'Wire Transfer';
+      return `${type.replace(/_/g, ' ')}${last4}`;
+    }
+    return 'Standard';
+  };
+
   const handlePrint = () => {
     try {
       window.print();
@@ -41,19 +64,19 @@ export const PrintInvoiceModal: React.FC<PrintInvoiceModalProps> = ({ order, onC
 ${settings.storeName.toUpperCase()} - TAX INVOICE
 Invoice Ref: ${order.orderNumber}
 Date: ${new Date(order.createdAt).toLocaleDateString()}
-Customer: ${order.customer.name} (${order.customer.email})
-Destination: ${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.country}
+Customer: ${order.customer?.name || 'Customer'} (${order.customer?.email || ''})
+Destination: ${order.shippingAddress?.street || ''}, ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.country || ''}
 Carrier: ${order.carrier || 'FedEx Express'} | Tracking: ${order.trackingNumber || 'Pending'}
 ----------------------------------------
 Items:
-${order.items.map(it => `- ${it.product.name} (Qty: ${it.quantity}) - ${formatPrice(it.unitPrice * it.quantity)}`).join('\n')}
+${(order.items || []).map(it => `- ${it.product?.name || 'Item'} (Qty: ${it.quantity}) - ${formatPrice((it.unitPrice || 0) * (it.quantity || 1))}`).join('\n')}
 ----------------------------------------
-Subtotal: ${formatPrice(order.subtotal)}
-Discount: -${formatPrice(order.discount)}
-Shipping: ${order.shippingCost === 0 ? 'FREE' : formatPrice(order.shippingCost)}
-Tax: ${formatPrice(order.tax)}
-TOTAL PAID: ${formatPrice(order.total)}
-Payment Status: ${order.paymentStatus.toUpperCase()} (${order.paymentMethod.type})
+Subtotal: ${formatPrice(order.subtotal || 0)}
+Discount: -${formatPrice(order.discount || 0)}
+Shipping: ${order.shippingCost === 0 ? 'FREE' : formatPrice(order.shippingCost || 0)}
+Tax: ${formatPrice(order.tax || 0)}
+TOTAL PAID: ${formatPrice(order.total || 0)}
+Payment Status: ${(order.paymentStatus || 'paid').toUpperCase()} (${getPaymentMethodDisplay(order.paymentMethod)})
 ========================================
     `.trim();
 
@@ -104,18 +127,18 @@ Payment Status: ${order.paymentStatus.toUpperCase()} (${order.paymentMethod.type
   <div class="grid">
     <div class="card">
       <h4>Billed & Shipped To</h4>
-      <strong>${order.shippingAddress.fullName}</strong><br/>
-      ${order.shippingAddress.street}<br/>
-      ${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.postalCode}<br/>
-      ${order.shippingAddress.country}<br/>
-      <small style="color:#71717a">${order.shippingAddress.phone || order.customer.email}</small>
+      <strong>${order.shippingAddress?.fullName || order.customer?.name || 'Customer'}</strong><br/>
+      ${order.shippingAddress?.street || ''}<br/>
+      ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.state || ''} ${order.shippingAddress?.postalCode || ''}<br/>
+      ${order.shippingAddress?.country || 'United States'}<br/>
+      <small style="color:#71717a">${order.shippingAddress?.phone || order.customer?.email || ''}</small>
     </div>
     <div class="card">
       <h4>Fulfillment & Payment</h4>
       <strong>Courier:</strong> ${order.carrier || 'FedEx Express'}<br/>
       <strong>Tracking #:</strong> ${order.trackingNumber || 'Pending Assignment'}<br/>
-      <strong>Payment Status:</strong> ${order.paymentStatus.toUpperCase()} (${order.paymentMethod.type})<br/>
-      <strong>Order Status:</strong> ${order.status.toUpperCase()}
+      <strong>Payment Status:</strong> ${(order.paymentStatus || 'paid').toUpperCase()} (${getPaymentMethodDisplay(order.paymentMethod)})<br/>
+      <strong>Order Status:</strong> ${(order.status || 'new').toUpperCase()}
     </div>
   </div>
 
@@ -130,27 +153,27 @@ Payment Status: ${order.paymentStatus.toUpperCase()} (${order.paymentMethod.type
       </tr>
     </thead>
     <tbody>
-      ${order.items.map(it => `
+      ${(order.items || []).map(it => `
         <tr>
           <td>
-            <strong>${it.product.name}</strong>
+            <strong>${it.product?.name || 'Store Item'}</strong>
             ${it.selectedVariant?.color?.name ? `<br/><small style="color:#71717a">Color: ${it.selectedVariant.color.name}</small>` : ''}
           </td>
-          <td style="font-family: monospace; color: #71717a;">${it.product.sku}</td>
+          <td style="font-family: monospace; color: #71717a;">${it.product?.sku || 'SKU-N/A'}</td>
           <td class="text-center">${it.quantity}</td>
-          <td class="text-right">${formatPrice(it.unitPrice)}</td>
-          <td class="text-right"><strong>${formatPrice(it.unitPrice * it.quantity)}</strong></td>
+          <td class="text-right">${formatPrice(it.unitPrice || 0)}</td>
+          <td class="text-right"><strong>${formatPrice((it.unitPrice || 0) * (it.quantity || 1))}</strong></td>
         </tr>
       `).join('')}
     </tbody>
   </table>
 
   <div class="totals">
-    <div class="totals-row"><span>Subtotal:</span><span>${formatPrice(order.subtotal)}</span></div>
+    <div class="totals-row"><span>Subtotal:</span><span>${formatPrice(order.subtotal || 0)}</span></div>
     ${order.discount > 0 ? `<div class="totals-row" style="color: #059669;"><span>Discount:</span><span>-${formatPrice(order.discount)}</span></div>` : ''}
-    <div class="totals-row"><span>Shipping:</span><span>${order.shippingCost === 0 ? 'FREE' : formatPrice(order.shippingCost)}</span></div>
-    <div class="totals-row"><span>Tax:</span><span>${formatPrice(order.tax)}</span></div>
-    <div class="totals-row totals-total"><span>Total:</span><span>${formatPrice(order.total)}</span></div>
+    <div class="totals-row"><span>Shipping:</span><span>${order.shippingCost === 0 ? 'FREE' : formatPrice(order.shippingCost || 0)}</span></div>
+    <div class="totals-row"><span>Tax:</span><span>${formatPrice(order.tax || 0)}</span></div>
+    <div class="totals-row totals-total"><span>Total:</span><span>${formatPrice(order.total || 0)}</span></div>
   </div>
 
   <div class="footer">
@@ -312,16 +335,16 @@ Payment Status: ${order.paymentStatus.toUpperCase()} (${order.paymentMethod.type
                 <p className="font-bold text-zinc-400 uppercase text-[10px] tracking-wider">
                   Deliver To / Consignee
                 </p>
-                <p className="font-bold text-zinc-950 text-sm">{order.shippingAddress.fullName}</p>
+                <p className="font-bold text-zinc-950 text-sm">{order.shippingAddress?.fullName || order.customer?.name || 'Customer'}</p>
                 <p className="text-zinc-700 leading-relaxed">
-                  {order.shippingAddress.street}
-                  {order.shippingAddress.apartment && `, ${order.shippingAddress.apartment}`}
+                  {order.shippingAddress?.street || ''}
+                  {order.shippingAddress?.apartment && `, ${order.shippingAddress.apartment}`}
                 </p>
                 <p className="text-zinc-700">
-                  {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}
+                  {order.shippingAddress?.city || ''}{order.shippingAddress?.state ? `, ${order.shippingAddress.state}` : ''} {order.shippingAddress?.postalCode || ''}
                 </p>
-                <p className="font-semibold text-zinc-900">{order.shippingAddress.country}</p>
-                <p className="text-zinc-500 pt-1 font-mono">{order.shippingAddress.phone || order.customer.email}</p>
+                <p className="font-semibold text-zinc-900">{order.shippingAddress?.country || 'United States'}</p>
+                <p className="text-zinc-500 pt-1 font-mono">{order.shippingAddress?.phone || order.customer?.email || ''}</p>
               </div>
 
               <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-200/80 space-y-1.5">
@@ -339,11 +362,11 @@ Payment Status: ${order.paymentStatus.toUpperCase()} (${order.paymentMethod.type
                   </div>
                   <div>
                     <span className="text-[10px] text-zinc-400 block">Payment Method</span>
-                    <strong className="text-zinc-900 capitalize">{order.paymentMethod.type.replace('_', ' ')}</strong>
+                    <strong className="text-zinc-900 capitalize">{getPaymentMethodDisplay(order.paymentMethod)}</strong>
                   </div>
                   <div>
                     <span className="text-[10px] text-zinc-400 block">Dispatch Status</span>
-                    <strong className="text-emerald-700 capitalize">{order.status}</strong>
+                    <strong className="text-emerald-700 capitalize">{order.status || 'new'}</strong>
                   </div>
                 </div>
               </div>
@@ -363,28 +386,28 @@ Payment Status: ${order.paymentStatus.toUpperCase()} (${order.paymentMethod.type
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 text-zinc-800">
-                  {order.items.map((it) => (
+                  {(order.items || []).map((it) => (
                     <tr key={it.id} className="hover:bg-zinc-50/50">
                       <td className="py-3.5 px-4">
-                        <p className="font-bold text-zinc-950">{it.product.name}</p>
+                        <p className="font-bold text-zinc-950">{it.product?.name || 'Store Item'}</p>
                         <p className="text-[11px] text-zinc-500">
-                          {it.product.brand} {it.selectedVariant.color?.name ? `• Color: ${it.selectedVariant.color.name}` : ''}
+                          {it.product?.brand || ''} {it.selectedVariant?.color?.name ? `• Color: ${it.selectedVariant.color.name}` : ''}
                         </p>
                       </td>
                       <td className="py-3.5 px-4 font-mono text-[11px] text-zinc-500">
-                        {it.product.sku}
+                        {it.product?.sku || 'SKU-N/A'}
                       </td>
                       <td className="py-3.5 px-4 text-center font-bold text-zinc-950">
                         {it.quantity}
                       </td>
                       {docType === 'invoice' && (
                         <td className="py-3.5 px-4 text-right font-mono text-zinc-700">
-                          {formatPrice(it.unitPrice)}
+                          {formatPrice(it.unitPrice || 0)}
                         </td>
                       )}
                       {docType === 'invoice' && (
                         <td className="py-3.5 px-4 text-right font-mono font-bold text-zinc-950">
-                          {formatPrice(it.unitPrice * it.quantity)}
+                          {formatPrice((it.unitPrice || 0) * (it.quantity || 1))}
                         </td>
                       )}
                       {docType === 'packingslip' && (

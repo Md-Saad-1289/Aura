@@ -87,6 +87,13 @@ export const api = {
     });
   },
 
+  async loginWithGoogle(data: { credential?: string; email: string; name: string; avatar?: string; googleId?: string }) {
+    return request<{ success: boolean; token?: string; user: User }>('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
   async register(name: string, email: string, password?: string) {
     return request<{ success: boolean; token: string; user: User }>('/auth/register', {
       method: 'POST',

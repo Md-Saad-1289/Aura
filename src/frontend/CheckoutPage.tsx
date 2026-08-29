@@ -25,6 +25,7 @@ import {
   StorefrontView,
   Order
 } from '../types';
+import { GoogleSignInButton } from '../common';
 
 interface CheckoutPageProps {
   onNavigate: (view: StorefrontView, categoryId?: string, productId?: string) => void;
@@ -225,6 +226,30 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderP
                   </span>
                 )}
               </div>
+
+              {/* Express Google Checkout Autofill */}
+              {!isAuthenticated && (
+                <div className="p-4 bg-zinc-50 border border-zinc-200/80 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-zinc-900">Already have a Google account?</p>
+                    <p className="text-[11px] text-zinc-500">Sign in to automatically link orders and save shipping addresses.</p>
+                  </div>
+                  <div className="w-full sm:w-auto min-w-[200px]">
+                    <GoogleSignInButton
+                      mode="signin"
+                      onSuccess={() => {
+                        if (currentUser) {
+                          setShippingAddress(prev => ({
+                            ...prev,
+                            fullName: currentUser.name || prev.fullName,
+                            email: currentUser.email || prev.email,
+                          }));
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Saved addresses selector for logged-in user */}
               {isAuthenticated && currentUser?.addresses && currentUser.addresses.length > 0 && (

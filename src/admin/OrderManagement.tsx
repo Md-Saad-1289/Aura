@@ -15,7 +15,10 @@ import {
   Download,
   Calendar,
   CreditCard,
-  DollarSign
+  DollarSign,
+  TrendingUp,
+  PackageCheck,
+  AlertCircle
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { Order, OrderStatus, PaymentStatus } from '../types';
@@ -40,11 +43,52 @@ export const OrderManagement: React.FC = () => {
   // Invoice modal state
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
 
+  // Helper to extract clean payment method display string
+  const getPaymentMethodDisplay = (paymentMethod: any): string => {
+    if (!paymentMethod) return 'Standard';
+    if (typeof paymentMethod === 'string') {
+      if (paymentMethod === 'cash_on_delivery') return 'Cash on Delivery';
+      if (paymentMethod === 'credit_card' || paymentMethod === 'stripe') return 'Credit Card';
+      if (paymentMethod === 'apple_pay') return 'Apple Pay';
+      if (paymentMethod === 'google_pay') return 'Google Pay';
+      if (paymentMethod === 'bank_transfer') return 'Wire Transfer';
+      return paymentMethod.replace(/_/g, ' ');
+    }
+    if (typeof paymentMethod === 'object') {
+      const type = paymentMethod.type || 'credit_card';
+      const last4 = paymentMethod.last4 ? ` (•••• ${paymentMethod.last4})` : '';
+      if (type === 'cash_on_delivery') return 'Cash on Delivery';
+      if (type === 'credit_card' || type === 'card' || type === 'stripe') return `Card${last4}`;
+      if (type === 'apple_pay') return 'Apple Pay';
+      if (type === 'google_pay') return 'Google Pay';
+      if (type === 'bank_transfer') return 'Wire Transfer';
+      return `${type.replace(/_/g, ' ')}${last4}`;
+    }
+    return 'Standard';
+  };
+
+  // Helper to extract method type for filtering
+  const getPaymentMethodType = (paymentMethod: any): string => {
+    if (!paymentMethod) return 'unknown';
+    if (typeof paymentMethod === 'string') return paymentMethod;
+    if (typeof paymentMethod === 'object') return paymentMethod.type || 'credit_card';
+    return 'unknown';
+  };
+
   const filteredOrders = useMemo(() => {
-    return orders.filter((order) => {
+    return (orders || []).filter((order) => {
+      if (!order) return false;
       if (statusFilter !== 'all' && order.status !== statusFilter) return false;
       if (paymentFilter !== 'all' && order.paymentStatus !== paymentFilter) return false;
-      if (paymentMethodFilter !== 'all' && order.paymentMethod !== paymentMethodFilter) return false;
+      
+      if (paymentMethodFilter !== 'all') {
+        const type = getPaymentMethodType(order.paymentMethod);
+        if (paymentMethodFilter === 'credit_card' && (type === 'credit_card' || type === 'card' || type === 'stripe')) {
+          // match
+        } else if (type !== paymentMethodFilter) {
+          return false;
+        }
+      }
 
       if (startDate) {
         const start = new Date(startDate);
@@ -58,10 +102,10 @@ export const OrderManagement: React.FC = () => {
       }
 
       if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        const matchNum = order.orderNumber.toLowerCase().includes(q);
-        const matchName = order.customer.name.toLowerCase().includes(q);
-        const matchEmail = order.customer.email.toLowerCase().includes(q);
+        const q = searchQuery.toLowerCase().trim();
+        const matchNum = (order.orderNumber || '').toLowerCase().includes(q);
+        const matchName = (order.customer?.name || '').toLowerCase().includes(q);
+        const matchEmail = (order.customer?.email || '').toLowerCase().includes(q);
         const matchTrack = (order.trackingNumber || '').toLowerCase().includes(q);
         if (!matchNum && !matchName && !matchEmail && !matchTrack) return false;
       }
@@ -69,6 +113,20 @@ export const OrderManagement: React.FC = () => {
       return true;
     });
   }, [orders, statusFilter, paymentFilter, paymentMethodFilter, startDate, endDate, searchQuery]);
+
+  // Metric summaries
+  const metrics = useMemo(() => {
+    const totalOrders = orders?.length || 0;
+    const totalRevenue = (orders || []).reduce((sum, o) => sum + (o.paymentStatus === 'paid' ? o.total : 0), 0);
+    const pendingDispatch = (orders || []).filter(o => o.status === 'new' || o.status === 'confirmed' || o.status === 'processing').length;
+    const deliveredCount = (orders || []).filter(o => o.status === 'delivered').length;
+    return {
+      totalOrders,
+      totalRevenue,
+      pendingDispatch,
+      deliveredCount
+    };
+  }, [orders]);
 
   const handleOpenTrackingModal = (order: Order) => {
     setTrackingModalOrder(order);
@@ -90,7 +148,7 @@ export const OrderManagement: React.FC = () => {
       filteredOrders
         .map(
           (o) =>
-            `"${o.orderNumber}","${new Date(o.createdAt).toISOString().slice(0, 10)}","${o.customer.name}","${o.customer.email}","${o.shippingAddress.city}","${o.shippingAddress.country}",${o.items.length},${o.total},"${o.paymentStatus}","${o.paymentMethod}","${o.status}","${o.carrier || ''}","${o.trackingNumber || ''}"`
+            `"${o.orderNumber || ''}","${o.createdAt ? new Date(o.createdAt).toISOString().slice(0, 10) : ''}","${o.customer?.name || 'Guest'}","${o.customer?.email || ''}","${o.shippingAddress?.city || ''}","${o.shippingAddress?.country || ''}",${o.items?.length || 0},${o.total || 0},"${o.paymentStatus || ''}","${getPaymentMethodDisplay(o.paymentMethod)}","${o.status || ''}","${o.carrier || ''}","${o.trackingNumber || ''}"`
         )
         .join('\n');
     const encodedUri = encodeURI(csvContent);
@@ -156,6 +214,47 @@ export const OrderManagement: React.FC = () => {
         </button>
       </div>
 
+      {/* Top Metric Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-4 bg-white rounded-2xl border border-zinc-200 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-zinc-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Gross Revenue</span>
+            <DollarSign className="w-4 h-4 text-emerald-600" />
+          </div>
+          <p className="text-xl font-bold font-mono text-zinc-950">{formatPrice(metrics.totalRevenue)}</p>
+          <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+            <TrendingUp className="w-3 h-3" /> Paid settled orders
+          </p>
+        </div>
+
+        <div className="p-4 bg-white rounded-2xl border border-zinc-200 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-zinc-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Total Consignments</span>
+            <ShoppingBag className="w-4 h-4 text-zinc-600" />
+          </div>
+          <p className="text-xl font-bold font-mono text-zinc-950">{metrics.totalOrders}</p>
+          <p className="text-[10px] text-zinc-500 font-medium">All recorded store orders</p>
+        </div>
+
+        <div className="p-4 bg-white rounded-2xl border border-zinc-200 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-zinc-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Pending Dispatch</span>
+            <Clock className="w-4 h-4 text-amber-500" />
+          </div>
+          <p className="text-xl font-bold font-mono text-amber-600">{metrics.pendingDispatch}</p>
+          <p className="text-[10px] text-amber-700 font-medium">Requires packaging/shipping</p>
+        </div>
+
+        <div className="p-4 bg-white rounded-2xl border border-zinc-200 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-zinc-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Delivered</span>
+            <PackageCheck className="w-4 h-4 text-emerald-600" />
+          </div>
+          <p className="text-xl font-bold font-mono text-emerald-600">{metrics.deliveredCount}</p>
+          <p className="text-[10px] text-emerald-700 font-medium">Completed customer shipments</p>
+        </div>
+      </div>
+
       {/* Filter Toolbar */}
       <div className="bg-white p-4 rounded-2xl border border-zinc-200 shadow-2xs space-y-3">
         <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
@@ -215,9 +314,10 @@ export const OrderManagement: React.FC = () => {
               className="bg-zinc-50 border border-zinc-200 rounded-lg px-2.5 py-1 text-xs font-medium text-zinc-800 focus:outline-none cursor-pointer"
             >
               <option value="all">All Gateways</option>
+              <option value="credit_card">Card / Stripe</option>
               <option value="cash_on_delivery">Cash on Delivery</option>
-              <option value="stripe">Card / Stripe</option>
               <option value="apple_pay">Apple Pay</option>
+              <option value="google_pay">Google Pay</option>
               <option value="bank_transfer">Wire Transfer</option>
             </select>
           </div>
@@ -286,16 +386,16 @@ export const OrderManagement: React.FC = () => {
                     </td>
 
                     <td className="py-3 px-4 text-zinc-500">
-                      {new Date(order.createdAt).toLocaleDateString(undefined, {
+                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString(undefined, {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric'
-                      })}
+                      }) : 'N/A'}
                     </td>
 
                     <td className="py-3 px-4">
-                      <p className="font-bold text-zinc-900">{order.customer.name}</p>
-                      <p className="text-[10px] text-zinc-400">{order.customer.email}</p>
+                      <p className="font-bold text-zinc-900">{order.customer?.name || 'Guest Customer'}</p>
+                      <p className="text-[10px] text-zinc-400">{order.customer?.email || 'No email'}</p>
                     </td>
 
                     <td className="py-3 px-4">
@@ -303,14 +403,14 @@ export const OrderManagement: React.FC = () => {
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${getPaymentBadge(order.paymentStatus)}`}>
                           {order.paymentStatus}
                         </span>
-                        <span className="text-[10px] text-zinc-400 font-medium">
-                          {order.paymentMethod === 'cash_on_delivery' ? 'COD' : order.paymentMethod}
+                        <span className="text-[10px] text-zinc-400 font-medium truncate max-w-[120px]">
+                          {getPaymentMethodDisplay(order.paymentMethod)}
                         </span>
                       </div>
                     </td>
 
                     <td className="py-3 px-4 font-bold text-zinc-950 font-mono">
-                      {formatPrice(order.total)}
+                      {formatPrice(order.total || 0)}
                     </td>
 
                     <td className="py-3 px-4">
@@ -347,7 +447,7 @@ export const OrderManagement: React.FC = () => {
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => setSelectedOrder(order)}
-                          className="p-1.5 text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100 rounded-lg"
+                          className="p-1.5 text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100 rounded-lg transition-colors"
                           title="View Details"
                         >
                           <Eye className="w-3.5 h-3.5" />
@@ -355,7 +455,7 @@ export const OrderManagement: React.FC = () => {
 
                         <button
                           onClick={() => handleOpenTrackingModal(order)}
-                          className="p-1.5 text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100 rounded-lg"
+                          className="p-1.5 text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100 rounded-lg transition-colors"
                           title="Update Tracking"
                         >
                           <Truck className="w-3.5 h-3.5" />
@@ -363,7 +463,7 @@ export const OrderManagement: React.FC = () => {
 
                         <button
                           onClick={() => setInvoiceOrder(order)}
-                          className="p-1.5 text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100 rounded-lg"
+                          className="p-1.5 text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100 rounded-lg transition-colors"
                           title="Print Invoice"
                         >
                           <Printer className="w-3.5 h-3.5" />
@@ -399,19 +499,25 @@ export const OrderManagement: React.FC = () => {
             {/* Line Items */}
             <div className="space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                Items ({selectedOrder.items.length})
+                Items ({selectedOrder.items?.length || 0})
               </h4>
               <div className="divide-y divide-zinc-150 border border-zinc-200 rounded-2xl p-4 bg-zinc-50/50">
-                {selectedOrder.items.map((it) => (
+                {(selectedOrder.items || []).map((it) => (
                   <div key={it.id} className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3 text-xs">
                     <div className="flex items-center gap-3">
-                      <img src={it.product.images[0]} alt={it.product.name} className="w-12 h-12 rounded-lg object-cover bg-white" />
+                      <img
+                        src={it.product?.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=200'}
+                        alt={it.product?.name || 'Item'}
+                        className="w-12 h-12 rounded-lg object-cover bg-white border border-zinc-200"
+                      />
                       <div>
-                        <p className="font-bold text-zinc-900">{it.product.name}</p>
-                        <p className="text-[11px] text-zinc-500">Qty: {it.quantity} {it.selectedVariant.color?.name ? `• ${it.selectedVariant.color.name}` : ''}</p>
+                        <p className="font-bold text-zinc-900">{it.product?.name || 'Store Item'}</p>
+                        <p className="text-[11px] text-zinc-500">
+                          Qty: {it.quantity} {it.selectedVariant?.color?.name ? `• ${it.selectedVariant.color.name}` : ''}
+                        </p>
                       </div>
                     </div>
-                    <span className="font-bold text-zinc-950">{formatPrice(it.unitPrice * it.quantity)}</span>
+                    <span className="font-bold text-zinc-950 font-mono">{formatPrice((it.unitPrice || 0) * (it.quantity || 1))}</span>
                   </div>
                 ))}
               </div>
@@ -419,12 +525,14 @@ export const OrderManagement: React.FC = () => {
 
             {/* Addresses */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200">
+              <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200 space-y-1">
                 <p className="font-bold text-zinc-400 uppercase text-[10px]">Shipping Destination</p>
-                <p className="font-bold text-zinc-900 mt-1">{selectedOrder.shippingAddress.fullName}</p>
-                <p className="text-zinc-600">{selectedOrder.shippingAddress.street}</p>
-                <p className="text-zinc-600">{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.postalCode}</p>
-                <p className="text-zinc-600">{selectedOrder.shippingAddress.country}</p>
+                <p className="font-bold text-zinc-900 mt-1">{selectedOrder.shippingAddress?.fullName || selectedOrder.customer?.name || 'Customer'}</p>
+                <p className="text-zinc-600">{selectedOrder.shippingAddress?.street || 'Address on file'}</p>
+                <p className="text-zinc-600">
+                  {selectedOrder.shippingAddress?.city || ''}{selectedOrder.shippingAddress?.state ? `, ${selectedOrder.shippingAddress.state}` : ''} {selectedOrder.shippingAddress?.postalCode || ''}
+                </p>
+                <p className="text-zinc-600">{selectedOrder.shippingAddress?.country || 'United States'}</p>
               </div>
 
               <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200 space-y-1">
@@ -432,7 +540,9 @@ export const OrderManagement: React.FC = () => {
                 <p className="font-bold text-zinc-900 mt-1">Carrier: {selectedOrder.carrier || 'FedEx Express'}</p>
                 <p className="text-zinc-600">Tracking: {selectedOrder.trackingNumber || 'Unassigned'}</p>
                 <p className="text-emerald-700 font-semibold capitalize">Status: {selectedOrder.status}</p>
-                <p className="text-zinc-500 font-mono text-[11px]">Payment: {selectedOrder.paymentStatus.toUpperCase()} ({selectedOrder.paymentMethod})</p>
+                <p className="text-zinc-500 font-mono text-[11px]">
+                  Payment: {selectedOrder.paymentStatus?.toUpperCase()} ({getPaymentMethodDisplay(selectedOrder.paymentMethod)})
+                </p>
               </div>
             </div>
 

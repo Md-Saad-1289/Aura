@@ -35,7 +35,7 @@ import { useStore } from '../context/StoreContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
 import { Address, Order, Product, StorefrontView } from '../types';
-import { AvatarSelectorModal, PRESET_AVATARS } from '../common';
+import { AvatarSelectorModal, PRESET_AVATARS, GoogleSignInButton, GoogleGIcon } from '../common';
 
 interface AccountPageProps {
   onNavigate: (view: StorefrontView, categoryId?: string, productId?: string) => void;
@@ -131,19 +131,26 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, onTrackOrd
 
   if (!isAuthenticated || !currentUser) {
     return (
-      <div className="max-w-md mx-auto py-24 px-4 text-center space-y-5">
-        <div className="w-16 h-16 bg-zinc-100 rounded-3xl flex items-center justify-center mx-auto text-zinc-400 shadow-xs border border-zinc-200">
+      <div className="max-w-md mx-auto py-20 px-4 text-center space-y-6">
+        <div className="w-16 h-16 bg-zinc-100 rounded-3xl flex items-center justify-center mx-auto text-zinc-700 shadow-xs border border-zinc-200">
           <UserIcon className="w-8 h-8" />
         </div>
         <div className="space-y-1.5">
-          <h2 className="text-xl font-serif font-bold text-zinc-950">Atelier Account Required</h2>
+          <h2 className="text-2xl font-serif font-bold text-zinc-950">Atelier Account Required</h2>
           <p className="text-xs text-zinc-500 max-w-xs mx-auto">
-            Please sign in to access your bespoke orders, curated wishlist, delivery tracking, and personal settings.
+            Sign in to access your bespoke orders, curated wishlist, real-time shipment tracking, and personal settings.
           </p>
         </div>
+
+        {/* 1-Click Google Sign In */}
+        <div className="p-5 bg-zinc-50 rounded-2xl border border-zinc-200/80 space-y-3 text-left">
+          <p className="text-xs font-semibold text-zinc-800 text-center">Fast & Secure Authentication</p>
+          <GoogleSignInButton mode="signin" />
+        </div>
+
         <button
           onClick={() => onNavigate('home')}
-          className="px-6 py-2.5 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
+          className="w-full px-6 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
         >
           Return to Storefront
         </button>
@@ -286,6 +293,12 @@ export const AccountPage: React.FC<AccountPageProps> = ({ onNavigate, onTrackOrd
                 <h1 className="text-xl sm:text-2xl font-serif font-bold text-zinc-100 tracking-tight">
                   {currentUser.name}
                 </h1>
+                {currentUser.authProvider === 'google' && (
+                  <span className="bg-white/10 text-white border border-white/20 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-2xs">
+                    <GoogleGIcon className="w-3 h-3" />
+                    <span>Google Account</span>
+                  </span>
+                )}
                 {currentUser.role && currentUser.role !== 'customer' && (
                   <span className="bg-amber-400/15 text-amber-300 border border-amber-400/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-2xs">
                     <Sparkles className="w-2.5 h-2.5 text-amber-400" />

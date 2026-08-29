@@ -11,6 +11,7 @@ interface AuthContextType {
   isSuperAdmin: boolean;
   isManager: boolean;
   login: (email: string, password?: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  loginWithGoogle: (profile: { email: string; name: string; avatar?: string; googleId?: string; credential?: string }) => Promise<{ success: boolean; error?: string; user?: User }>;
   register: (name: string, email: string, password?: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => void;
   switchUser: (role: UserRole | 'guest') => void;
@@ -93,6 +94,77 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     return { success: false, error: 'Login failed' };
+  };
+
+  const loginWithGoogle = async (profile: {
+    email: string;
+    name: string;
+    avatar?: string;
+    googleId?: string;
+    credential?: string;
+  }): Promise<{ success: boolean; error?: string; user?: User }> => {
+    try {
+      // 1. Attempt backend API sync
+      const res = await api.loginWithGoogle(profile);
+      if (res.success && res.user) {
+        if (res.token) setAuthToken(res.token);
+        setCurrentUser(res.user);
+        logActivity('Google Sign In', 'auth', `User ${res.user.name} signed in with Google Account.`, res.user.id);
+        return { success: true, user: res.user };
+      }
+    } catch (err: any) {
+      // 2. Client-side local fallback
+      const email = profile.email.trim().toLowerCase();
+      const existingUser = customers.find((u) => u.email.toLowerCase() === email);
+
+      if (existingUser) {
+        if (existingUser.status === 'blocked') {
+          return { success: false, error: 'Your account has been suspended. Please contact support.' };
+        }
+        const updatedUser: User = {
+          ...existingUser,
+          name: profile.name || existingUser.name,
+          avatar: profile.avatar || existingUser.avatar,
+          authProvider: 'google',
+          googleId: profile.googleId || existingUser.googleId,
+        };
+        setCurrentUser(updatedUser);
+        logActivity('Google Sign In', 'auth', `User ${updatedUser.name} signed in with Google.`, updatedUser.id);
+        return { success: true, user: updatedUser };
+      }
+
+      // Check admin users
+      const adminUser = INITIAL_USERS.find((u) => u.email.toLowerCase() === email);
+      if (adminUser) {
+        const updatedAdmin: User = {
+          ...adminUser,
+          avatar: profile.avatar || adminUser.avatar,
+          authProvider: 'google',
+          googleId: profile.googleId,
+        };
+        setCurrentUser(updatedAdmin);
+        logActivity('Google Sign In', 'auth', `Admin ${updatedAdmin.name} signed in with Google.`, updatedAdmin.id);
+        return { success: true, user: updatedAdmin };
+      }
+
+      // Register new Google customer
+      const newUser = addCustomer({
+        name: profile.name || 'Google User',
+        email: profile.email,
+        role: 'customer',
+        avatar: profile.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profile.name || 'User')}`,
+        addresses: [],
+        status: 'active',
+        authProvider: 'google',
+        googleId: profile.googleId,
+      });
+
+      setCurrentUser(newUser);
+      logActivity('Google Account Created', 'auth', `New account created via Google for ${newUser.name}.`, newUser.id);
+      return { success: true, user: newUser };
+    }
+
+    return { success: false, error: 'Google sign-in could not be completed.' };
   };
 
   const register = async (
@@ -231,6 +303,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isSuperAdmin,
         isManager,
         login,
+        loginWithGoogle,
         register,
         logout,
         switchUser,

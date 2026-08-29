@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Lock, Mail, User as UserIcon, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { GoogleSignInButton } from './GoogleSignInButton';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -27,6 +28,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const handleGoogleSuccess = () => {
+    setSuccessMsg('Signed in with Google successfully.');
+    setTimeout(() => {
+      onClose();
+      if (onSuccess) onSuccess();
+    }, 400);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +96,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </h3>
             <p className="text-xs text-zinc-500 mt-0.5">
               {tab === 'login'
-                ? 'Sign in to access your orders and saved addresses'
+                ? 'Sign in to access your orders, wishlist, and saved addresses'
                 : 'Join the AURA membership for private releases'}
             </p>
           </div>
@@ -147,6 +156,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           )}
 
+          {/* Google 1-Click Sign-In */}
+          <div>
+            <GoogleSignInButton
+              mode={tab === 'register' ? 'signup' : 'signin'}
+              onSuccess={handleGoogleSuccess}
+              onError={(err) => setError(err)}
+            />
+          </div>
+
+          <div className="relative my-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-zinc-200" />
+            </div>
+            <div className="relative flex justify-center text-[10px] uppercase font-semibold text-zinc-400">
+              <span className="bg-white px-2">Or continue with email</span>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-3.5">
             {tab === 'register' && (
               <div>
@@ -205,9 +232,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl text-xs font-semibold tracking-wide transition-all disabled:opacity-50"
+              className="w-full mt-2 py-3 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl text-xs font-semibold tracking-wide transition-all disabled:opacity-50 cursor-pointer"
             >
-              {loading ? 'Processing...' : tab === 'login' ? 'Sign In to Account' : 'Create Account'}
+              {loading ? 'Processing...' : tab === 'login' ? 'Sign In with Password' : 'Create Account'}
             </button>
           </form>
         </div>
@@ -215,3 +242,4 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     </div>
   );
 };
+

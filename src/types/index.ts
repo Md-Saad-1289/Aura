@@ -159,6 +159,8 @@ export interface User {
   tier?: string;
   notes?: string;
   status: 'active' | 'blocked';
+  authProvider?: 'email' | 'google' | 'guest';
+  googleId?: string;
 }
 
 export type Customer = User;
