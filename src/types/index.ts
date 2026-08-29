@@ -216,13 +216,48 @@ export interface Coupon {
   isActive: boolean;
 }
 
+export interface BlogAuthor {
+  name: string;
+  role: string;
+  avatar: string;
+}
+
+export interface BlogComment {
+  id: string;
+  postId: string;
+  userName: string;
+  userAvatar?: string;
+  comment: string;
+  createdAt: string;
+}
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  coverImage: string;
+  author: BlogAuthor;
+  category: string;
+  tags: string[];
+  readTime: string;
+  publishedAt: string;
+  status: 'published' | 'draft' | 'archived';
+  featured?: boolean;
+  relatedProductIds?: string[];
+  likes: number;
+  comments: BlogComment[];
+  views?: number;
+}
+
 export interface ActivityLog {
   id: string;
   userId: string;
   userName: string;
   userRole: string;
   action: string;
-  entityType: 'product' | 'order' | 'category' | 'coupon' | 'review' | 'customer' | 'settings' | 'auth';
+  entityType: 'product' | 'order' | 'category' | 'coupon' | 'review' | 'customer' | 'settings' | 'auth' | 'blog';
   entityId?: string;
   details: string;
   timestamp: string;
@@ -283,7 +318,9 @@ export type StorefrontView =
   | 'account'
   | 'wishlist'
   | 'about'
-  | 'contact';
+  | 'contact'
+  | 'blog'
+  | 'blog-detail';
 
 export type AdminView =
   | 'dashboard'
@@ -297,5 +334,6 @@ export type AdminView =
   | 'shipping'
   | 'settings'
   | 'admins'
+  | 'blogs'
   | 'roles'
   | 'logs';

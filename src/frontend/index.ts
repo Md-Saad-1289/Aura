@@ -1,5 +1,7 @@
 export { AboutPage } from './AboutPage';
 export { AccountPage } from './AccountPage';
+export { BlogPage } from './BlogPage';
+export { BlogDetailPage } from './BlogDetailPage';
 export { CartPage } from './CartPage';
 export { CategoriesPage } from './CategoriesPage';
 export { CheckoutPage } from './CheckoutPage';

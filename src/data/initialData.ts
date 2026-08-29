@@ -7,7 +7,8 @@ import {
   Coupon,
   ShippingMethod,
   StoreSettings,
-  ActivityLog
+  ActivityLog,
+  BlogPost
 } from '../types';
 
 export const INITIAL_CATEGORIES: Category[] = [
@@ -1285,3 +1286,223 @@ export const INITIAL_STORE_SETTINGS: StoreSettings = {
     facebook: 'https://facebook.com'
   }
 };
+
+export const INITIAL_BLOG_POSTS: BlogPost[] = [
+  {
+    id: 'blog-1',
+    title: 'The Art of Slow Metallurgy: Crafting Aerospace-Grade Titanium Acoustics',
+    slug: 'the-art-of-slow-metallurgy-titanium-acoustics',
+    excerpt: 'An inside look into our metallurgical foundry in Kyoto, where raw titanium ingots undergo 48 hours of precision CNC acoustic milling to eliminate micro-harmonic distortions.',
+    content: `## The Quest for Pure Resonance
+
+In the realm of high-fidelity transducers, material rigidity and damping coefficient dictate everything. While polycarbonate and injection-molded plastics dominate mass manufacturing, they introduce subtle cabinet flex at sub-harmonic frequencies.
+
+At AURA Atelier, our engineering thesis was simple: **what if we carved an acoustic chamber out of an uncompromised solid billet of Grade 5 Titanium?**
+
+> "Titanium exhibits a unique strength-to-density ratio that prevents resonant standing waves, delivering absolute silence between the notes."
+> — *Kenji Takahashi, Head of Acoustic Metallurgy*
+
+### 1. The 48-Hour Micro-Milling Process
+Each ear-cup housing begins as a solid 2.4-kilogram cylindrical titanium ingot. Over two continuous days of subterranean 5-axis CNC machining, 94% of the metal is carefully carved away in temperature-controlled coolant baths. The resulting shell weighs merely 62 grams, yet retains extraordinary structural tension.
+
+### 2. Hand-Polishing with Diamond Paste
+Following the precision CNC cut, each chassis is hand-burnished by master artisans using progressive micron-grade diamond slurries. This produces a satin, anisotropic brush texture that ages gracefully without fingerprints or oxidation.
+
+### 3. Harmonic Damping & Leather Integration
+To isolate the 40mm bio-cellulose dynamic drivers, the interior chamber is lined with micro-perforated damping foam and sealed with vegetable-tanned Italian lambskin. The result is a soundstage that expands beyond physical boundaries—revealing the subtle breath of a vocalist and the micro-textures of orchestral strings.`,
+    coverImage: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1200&auto=format&fit=crop',
+    author: {
+      name: 'Elena Rostova',
+      role: 'Principal Acoustic Architect',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop'
+    },
+    category: 'Materials & Metallurgy',
+    tags: ['Acoustics', 'Titanium', 'Craftsmanship', 'Industrial Design', 'Kyoto'],
+    readTime: '6 min read',
+    publishedAt: '2026-08-20T10:00:00Z',
+    status: 'published',
+    featured: true,
+    relatedProductIds: ['prod-1', 'prod-2'],
+    likes: 142,
+    views: 1890,
+    comments: [
+      {
+        id: 'c-1',
+        postId: 'blog-1',
+        userName: 'Julian Vance',
+        userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop',
+        comment: 'The acoustic separation on the Masterpiece headphones is unlike anything I have heard in 20 years of mastering audio. Fascinating breakdown of the titanium milling!',
+        createdAt: '2026-08-21T14:22:00Z'
+      },
+      {
+        id: 'c-2',
+        postId: 'blog-1',
+        userName: 'Aria Montgomery',
+        userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop',
+        comment: 'Love the deep dive into the Kyoto workshop. True craftsmanship is so rare these days.',
+        createdAt: '2026-08-22T09:15:00Z'
+      }
+    ]
+  },
+  {
+    id: 'blog-2',
+    title: 'Vegetable-Tanned Buttero Leather: A Century-Old Tuscan Heritage',
+    slug: 'vegetable-tanned-buttero-leather-tuscan-heritage',
+    excerpt: 'Exploring the Santa Croce sull’Arno tanneries where chestnut tannins, slow wooden drum tumbling, and organic fats yield leather that develops an inimitable amber patina over decades.',
+    content: `## The Soul of Tuscan Vegetable Tanning
+
+Modern fast fashion relies almost exclusively on chromium tanning—a chemical process that finishes hides in hours but creates inert, plastic-feeling surfaces that peel rather than age.
+
+In contrast, our leather goods are shaped exclusively from **Pelle Conciata al Vegetale in Toscana**, certified by the Italian Leather Consortium.
+
+### What Makes Buttero Leather Extraordinary?
+Sourced from full-grain French cattle hides, Buttero leather undergoes a 60-day natural tanning ritual in subterranean wooden drums filled with organic extracts from chestnut and mimosa bark.
+
+* **Natural Tactility:** The natural grain is never corrected or sanded down.
+* **Warm Organic Scent:** Sweet, earthy, and unmistakable.
+* **The Living Patina:** As you carry our Weekender Bag or Slim Cardholder, body heat, natural oils, and sunlight gradually transform the leather into a rich, lustrous honey-amber hue.
+
+> "A fine leather object is not finished when it leaves our workshop. It is merely born. Its true character is written by the life of its owner."
+
+### Caring for Full-Grain Leather
+To maintain suppleness without darkening the surface, we recommend applying a light natural beeswax balm once every four seasons. Allow it to absorb overnight, then gently buff with a horsehair brush.`,
+    coverImage: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=1200&auto=format&fit=crop',
+    author: {
+      name: 'Matteo Bellini',
+      role: 'Master Leather Tanner & Artisan',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop'
+    },
+    category: 'Craft & Provenance',
+    tags: ['Leather', 'Tuscany', 'Patina', 'Slow Fashion', 'Sustainability'],
+    readTime: '5 min read',
+    publishedAt: '2026-08-15T08:30:00Z',
+    status: 'published',
+    featured: false,
+    relatedProductIds: ['prod-6', 'prod-7'],
+    likes: 98,
+    views: 1420,
+    comments: [
+      {
+        id: 'c-3',
+        postId: 'blog-2',
+        userName: 'Soren Lindqvist',
+        comment: 'My Atelier weekender is already developing a deep caramel sheen after just six months of travel. Unbeatable quality.',
+        createdAt: '2026-08-16T11:45:00Z'
+      }
+    ]
+  },
+  {
+    id: 'blog-3',
+    title: 'The Philosophy of Reductive Form: Dieter Rams Meets Modern Living',
+    slug: 'philosophy-of-reductive-form-modern-living',
+    excerpt: 'Why eliminating extraneous details is the most difficult design discipline. How our design team approaches proportion, optical weight, and enduring functional minimalism.',
+    content: `## Less, But Uncompromising
+
+When creating objects that inhabit your daily living sanctuary, the greatest challenge is knowing when to stop designing. Every seam, bezel, button, and indicator light must earn its right to exist.
+
+### The Principles of Quiet Design
+1. **Honesty of Purpose:** A clock must celebrate time; an audio amplifier must celebrate acoustic clarity.
+2. **Invisible Ergonomics:** Controls that fall naturally under the fingertips without visual searching.
+3. **Monochrome Harmony:** Utilizing natural metal tones, deep obsidian, and warm neutrals to avoid visual fatigue.
+
+> "Good design is as little design as possible. It concentrates on the essential aspects, and the products are not burdened with non-essentials."
+
+In our latest homeware and desk accessories, you will notice zero external branding on primary faces. Luxury is not a logo; it is the tactile click of an anodized aluminum dial, the weighted balance of a brass pen, and the seamless convergence of glass and stone.`,
+    coverImage: 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?q=80&w=1200&auto=format&fit=crop',
+    author: {
+      name: 'Claire Moreau',
+      role: 'Creative Director of Design',
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop'
+    },
+    category: 'Design Philosophy',
+    tags: ['Minimalism', 'Industrial Design', 'Interior', 'Architecture'],
+    readTime: '4 min read',
+    publishedAt: '2026-08-10T15:00:00Z',
+    status: 'published',
+    featured: false,
+    relatedProductIds: ['prod-8', 'prod-9'],
+    likes: 215,
+    views: 2900,
+    comments: [
+      {
+        id: 'c-4',
+        postId: 'blog-3',
+        userName: 'David Miller',
+        comment: 'This philosophy is why I keep coming back to Aura. No unnecessary lights or gimmicks—just pure, honest form.',
+        createdAt: '2026-08-11T16:05:00Z'
+      }
+    ]
+  },
+  {
+    id: 'blog-4',
+    title: 'Horological Precision: Automatic Movements & Sapphire Optics',
+    slug: 'horological-precision-automatic-movements-sapphire-optics',
+    excerpt: 'An exploration into the heartbeat of our automatic chronographs, calibrated to within -4/+6 seconds per day and encased in double-domed anti-reflective sapphire crystal.',
+    content: `## 28,800 Vibrations Per Hour
+
+At the core of the Atelier Chronograph lies a bespoke 26-jewel automatic mechanical caliber. Driven solely by the kinetic motion of the wearer’s wrist, it requires no battery, no software update, and no planned obsolescence.
+
+### The Engineering Anatomy
+* **Glucydur Balance Wheel:** Engineered from a copper-beryllium-iron alloy to remain immune to thermal expansion.
+* **Double-Domed Sapphire Crystal:** Second only to diamond in Mohs hardness (9/10), treated with 5 layers of internal anti-reflective coating for distortion-free legibility in glaring sunlight.
+* **Surgical 316L Stainless Case:** Saltwater-proof and corrosion-resistant up to 100 meters of hydrostatic pressure.
+
+### The Joy of Mechanical Autonomy
+In an era dominated by disposable smart screens and fleeting notifications, glancing down at a sweeping second hand is a grounding ritual. It connects us to 300 years of horological engineering.`,
+    coverImage: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1200&auto=format&fit=crop',
+    author: {
+      name: 'Jean-Luc Berthier',
+      role: 'Chief Horologist',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&auto=format&fit=crop'
+    },
+    category: 'Craft & Provenance',
+    tags: ['Horology', 'Timepieces', 'Sapphire', 'Mechanical', 'Swiss Calibration'],
+    readTime: '7 min read',
+    publishedAt: '2026-08-04T12:00:00Z',
+    status: 'published',
+    featured: false,
+    relatedProductIds: ['prod-4', 'prod-5'],
+    likes: 180,
+    views: 2150,
+    comments: []
+  },
+  {
+    id: 'blog-5',
+    title: 'Lifetime Garment Preservation: The Definitive Merino & Cashmere Care Guide',
+    slug: 'lifetime-garment-preservation-merino-cashmere-care-guide',
+    excerpt: 'Step-by-step master rituals for washing, de-pilling, seasonal cedar storage, and steam pressing your fine knitwear and tailoring pieces.',
+    content: `## Caring for Noble Natural Fibers
+
+Fine knitwear spun from Grade-A Mongolian cashmere and extrafine Australian merino wool possesses remarkable natural elasticity and odor resistance. However, improper laundering is the primary cause of fiber distress.
+
+### 1. Washing Ritual
+* **Frequency:** Natural wool fibers need washing only once every 5 to 7 wears. Often, simply airing the garment overnight in a well-ventilated room will naturally refresh the fibers.
+* **Water Temperature:** Strictly tepid or cold (never exceeding 30°C / 86°F).
+* **Detergent:** Use a pH-neutral wool wash containing natural lanolin to restore fiber lubrication.
+
+### 2. Drying & Reshaping
+Never wring or hang wet knitwear, as water weight will deform shoulder seams.
+1. Lay the damp sweater flat on a clean dry towel.
+2. Roll the towel up like a cylinder and press gently to absorb excess moisture.
+3. Unroll and dry flat on a horizontal drying mesh away from direct heat sources.
+
+### 3. Off-Season Cedar Storage
+Before storing knitwear for summer, ensure pieces are cleaned. Store in breathable organic cotton garment boxes with aromatic red cedar blocks to naturally deter moths.`,
+    coverImage: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?q=80&w=1200&auto=format&fit=crop',
+    author: {
+      name: 'Claire Moreau',
+      role: 'Creative Director of Design',
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop'
+    },
+    category: 'Care Guide',
+    tags: ['Care Guide', 'Cashmere', 'Merino Wool', 'Sustainable Living', 'Longevity'],
+    readTime: '5 min read',
+    publishedAt: '2026-07-28T09:00:00Z',
+    status: 'published',
+    featured: false,
+    relatedProductIds: ['prod-3'],
+    likes: 89,
+    views: 1100,
+    comments: []
+  }
+];

@@ -409,6 +409,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSwitchToAdmin }) =
             <ul className="space-y-2.5 text-xs text-zinc-400">
               <li>
                 <button
+                  onClick={() => onNavigate('blog')}
+                  className="hover:text-zinc-100 transition-colors text-left font-medium text-zinc-300"
+                >
+                  Journal & Editorial Stories
+                </button>
+              </li>
+              <li>
+                <button
                   onClick={() => onNavigate('about')}
                   className="hover:text-zinc-100 transition-colors text-left"
                 >
@@ -564,19 +572,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSwitchToAdmin }) =
           </div>
         </div>
 
-        {/* Action Controls: Staff Portal + Back to Top */}
+        {/* Action Controls: Back to Top */}
         <div className="flex items-center gap-3">
-          {onSwitchToAdmin && (
-            <button
-              onClick={onSwitchToAdmin}
-              className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              title="Enter Atelier Management Suite"
-            >
-              <Lock className="w-3 h-3 text-amber-400" />
-              <span>Staff Portal</span>
-            </button>
-          )}
-
           <button
             onClick={scrollToTop}
             className="px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"

@@ -20,7 +20,9 @@ import {
   AccountPage,
   WishlistPage,
   AboutPage,
-  ContactPage
+  ContactPage,
+  BlogPage,
+  BlogDetailPage
 } from './frontend';
 
 // Admin Suite
@@ -36,7 +38,8 @@ import {
   ReviewManagement,
   ShippingManagement,
   SettingsManagement,
-  AdminUserManagement
+  AdminUserManagement,
+  BlogManagement
 } from './admin';
 
 const MainApp: React.FC = () => {
@@ -61,7 +64,8 @@ const MainApp: React.FC = () => {
       const view = search.get('view') as StorefrontView;
       const validViews: StorefrontView[] = [
         'home', 'shop', 'categories', 'product-detail', 'cart', 'checkout',
-        'order-confirmation', 'order-tracking', 'account', 'about', 'contact'
+        'order-confirmation', 'order-tracking', 'account', 'about', 'contact',
+        'blog', 'blog-detail'
       ];
       if (view && validViews.includes(view)) return view;
     }
@@ -74,7 +78,8 @@ const MainApp: React.FC = () => {
       const view = search.get('admin_view') as AdminView;
       const validViews: AdminView[] = [
         'dashboard', 'products', 'categories', 'orders', 'customers',
-        'reports', 'coupons', 'reviews', 'shipping', 'settings', 'admins'
+        'reports', 'coupons', 'reviews', 'shipping', 'settings', 'admins',
+        'blogs'
       ];
       if (view && validViews.includes(view)) return view;
     }
@@ -98,6 +103,12 @@ const MainApp: React.FC = () => {
     }
     return undefined;
   });
+  const [activeBlogSlug, setActiveBlogSlug] = useState<string | undefined>(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('article') || undefined;
+    }
+    return undefined;
+  });
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [trackingOrderNumber, setTrackingOrderNumber] = useState<string | undefined>(() => {
     if (typeof window !== 'undefined') {
@@ -117,11 +128,17 @@ const MainApp: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [storeView, adminView, mode]);
 
-  const handleNavigateStorefront = (view: StorefrontView, categoryId?: string, productId?: string) => {
+  const handleNavigateStorefront = (
+    view: StorefrontView,
+    categoryId?: string,
+    productId?: string,
+    blogSlug?: string
+  ) => {
     setMode('customer');
     setStoreView(view);
     if (categoryId !== undefined) setActiveCategoryId(categoryId);
     if (productId !== undefined) setActiveProductId(productId);
+    if (blogSlug !== undefined) setActiveBlogSlug(blogSlug);
   };
 
   const handleNavigateAdmin = (view: AdminView) => {
@@ -156,6 +173,7 @@ const MainApp: React.FC = () => {
           {adminView === 'categories' && <CategoryManagement />}
           {adminView === 'orders' && <OrderManagement />}
           {adminView === 'customers' && <CustomerManagement />}
+          {adminView === 'blogs' && <BlogManagement />}
           {adminView === 'reports' && <ReportsAnalytics />}
           {adminView === 'coupons' && <CouponManagement />}
           {adminView === 'reviews' && <ReviewManagement />}
@@ -199,6 +217,21 @@ const MainApp: React.FC = () => {
             {storeView === 'product-detail' && (
               <ProductDetailPage
                 productId={activeProductId}
+                onNavigate={handleNavigateStorefront}
+                onQuickView={(product) => setQuickViewProduct(product)}
+              />
+            )}
+
+            {storeView === 'blog' && (
+              <BlogPage
+                onNavigate={handleNavigateStorefront}
+                onSelectArticle={(slug) => setActiveBlogSlug(slug)}
+              />
+            )}
+
+            {storeView === 'blog-detail' && (
+              <BlogDetailPage
+                blogSlugOrId={activeBlogSlug}
                 onNavigate={handleNavigateStorefront}
                 onQuickView={(product) => setQuickViewProduct(product)}
               />

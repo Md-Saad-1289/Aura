@@ -1,5 +1,6 @@
 export { AdminLayout } from './AdminLayout';
 export { AdminUserManagement } from './AdminUserManagement';
+export { BlogManagement } from './BlogManagement';
 export { CategoryManagement } from './CategoryManagement';
 export { CouponManagement } from './CouponManagement';
 export { CustomerManagement } from './CustomerManagement';

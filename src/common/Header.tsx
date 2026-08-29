@@ -227,6 +227,17 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
 
               <button
+                onClick={() => onNavigate('blog')}
+                className={`text-sm font-medium transition-colors ${
+                  currentView === 'blog' || currentView === 'blog-detail'
+                    ? 'text-zinc-950 font-semibold'
+                    : 'text-zinc-600 hover:text-zinc-950'
+                }`}
+              >
+                Journal
+              </button>
+
+              <button
                 onClick={() => onNavigate('about')}
                 className={`text-sm font-medium transition-colors ${
                   currentView === 'about'
@@ -401,7 +412,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-zinc-200 bg-white px-4 pt-3 pb-6 space-y-3">
-          <div className="grid grid-cols-2 gap-2 pb-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pb-2">
             <button
               onClick={() => {
                 onNavigate('home');
@@ -434,6 +445,28 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               Collections
+            </button>
+            <button
+              onClick={() => {
+                onNavigate('blog');
+                setMobileMenuOpen(false);
+              }}
+              className={`p-2.5 rounded-lg text-left text-sm font-medium ${
+                currentView === 'blog' || currentView === 'blog-detail' ? 'bg-zinc-950 text-white' : 'bg-zinc-50 text-zinc-800'
+              }`}
+            >
+              Journal
+            </button>
+            <button
+              onClick={() => {
+                onNavigate('about');
+                setMobileMenuOpen(false);
+              }}
+              className={`p-2.5 rounded-lg text-left text-sm font-medium ${
+                currentView === 'about' ? 'bg-zinc-950 text-white' : 'bg-zinc-50 text-zinc-800'
+              }`}
+            >
+              Craft & Story
             </button>
             <button
               onClick={() => {

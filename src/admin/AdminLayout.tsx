@@ -19,7 +19,8 @@ import {
   Menu,
   X,
   Sparkles,
-  ArrowUpRight
+  ArrowUpRight,
+  BookOpen
 } from 'lucide-react';
 import { AdminView } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -39,7 +40,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   children
 }) => {
   const { currentUser, logout, hasPermission } = useAuth();
-  const { orders, products, reviews } = useStore();
+  const { orders, products, reviews, blogs } = useStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -53,6 +54,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     { id: 'categories', label: 'Categories', icon: FolderTree, permission: 'manage_categories' },
     { id: 'orders', label: 'Orders', icon: ShoppingBag, badge: pendingOrdersCount > 0 ? `${pendingOrdersCount}` : undefined, badgeColor: 'emerald', permission: 'manage_orders' },
     { id: 'customers', label: 'Customers', icon: Users, permission: 'manage_customers' },
+    { id: 'blogs', label: 'Journal & Stories', icon: BookOpen, badge: `${blogs.length}`, badgeColor: 'zinc', permission: 'manage_blogs' },
     { id: 'reports', label: 'Reports & Analytics', icon: BarChart3, permission: 'view_analytics' },
     { id: 'coupons', label: 'Coupons & Promos', icon: Tag, permission: 'manage_coupons' },
     { id: 'reviews', label: 'Reviews', icon: Star, badge: pendingReviewsCount > 0 ? `${pendingReviewsCount}` : undefined, badgeColor: 'purple', permission: 'manage_reviews' },

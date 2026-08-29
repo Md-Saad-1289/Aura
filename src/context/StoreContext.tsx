@@ -13,6 +13,8 @@ import {
   PaymentStatus,
   CurrencyConfig,
   ReviewEligibility,
+  BlogPost,
+  BlogComment,
 } from '../types';
 import {
   INITIAL_PRODUCTS,
@@ -24,6 +26,7 @@ import {
   INITIAL_SHIPPING_METHODS,
   INITIAL_STORE_SETTINGS,
   INITIAL_ACTIVITY_LOGS,
+  INITIAL_BLOG_POSTS,
 } from '../data/initialData';
 import { api } from '../services/api';
 
@@ -37,9 +40,18 @@ interface StoreContextType {
   shippingMethods: ShippingMethod[];
   settings: StoreSettings;
   activityLogs: ActivityLog[];
+  blogs: BlogPost[];
   currency: CurrencyConfig;
   setCurrency: (currency: CurrencyConfig) => void;
   formatPrice: (amount: number) => string;
+
+  // Blog Actions
+  addBlogPost: (post: Omit<BlogPost, 'id' | 'publishedAt' | 'likes' | 'comments' | 'views'>) => BlogPost;
+  updateBlogPost: (id: string, updates: Partial<BlogPost>) => void;
+  deleteBlogPost: (id: string) => void;
+  likeBlogPost: (id: string) => void;
+  addBlogComment: (postId: string, comment: { userName: string; comment: string; userAvatar?: string }) => void;
+  incrementBlogViews: (id: string) => void;
 
   // Product Actions
   addProduct: (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Product;
@@ -99,6 +111,7 @@ const STORAGE_KEYS = {
   SHIPPING: 'aura_store_shipping_v1',
   SETTINGS: 'aura_store_settings_v1',
   LOGS: 'aura_store_logs_v1',
+  BLOGS: 'aura_store_blogs_v1',
 };
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -147,6 +160,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return saved ? JSON.parse(saved) : INITIAL_ACTIVITY_LOGS;
   });
 
+  const [blogs, setBlogs] = useState<BlogPost[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.BLOGS);
+    return saved ? JSON.parse(saved) : INITIAL_BLOG_POSTS;
+  });
+
   const [currency, setCurrency] = useState<CurrencyConfig>(
     settings.currency && typeof settings.currency === 'object'
       ? settings.currency
@@ -189,6 +207,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(activityLogs));
   }, [activityLogs]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.BLOGS, JSON.stringify(blogs));
+  }, [blogs]);
 
   // Initial fetch from MongoDB backend
   useEffect(() => {
@@ -760,6 +782,74 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     logActivity('Review Deleted', 'review', `Deleted review ${id}`, id);
   };
 
+  // Blog Actions
+  const addBlogPost = (postData: Omit<BlogPost, 'id' | 'publishedAt' | 'likes' | 'comments' | 'views'>): BlogPost => {
+    const newPost: BlogPost = {
+      ...postData,
+      id: `blog-${Date.now()}`,
+      publishedAt: new Date().toISOString(),
+      likes: 0,
+      views: 1,
+      comments: [],
+    };
+    setBlogs((prev) => [newPost, ...prev]);
+    logActivity('Article Created', 'blog', `Created editorial story: "${newPost.title}"`, newPost.id);
+    return newPost;
+  };
+
+  const updateBlogPost = (id: string, updates: Partial<BlogPost>) => {
+    setBlogs((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, ...updates } : b))
+    );
+    logActivity('Article Updated', 'blog', `Updated editorial story ID: ${id}`, id);
+  };
+
+  const deleteBlogPost = (id: string) => {
+    const postToDelete = blogs.find((b) => b.id === id);
+    setBlogs((prev) => prev.filter((b) => b.id !== id));
+    logActivity(
+      'Article Deleted',
+      'blog',
+      `Deleted editorial story: "${postToDelete?.title || id}"`,
+      id
+    );
+  };
+
+  const likeBlogPost = (id: string) => {
+    setBlogs((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, likes: (b.likes || 0) + 1 } : b))
+    );
+  };
+
+  const incrementBlogViews = (id: string) => {
+    setBlogs((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, views: (b.views || 0) + 1 } : b))
+    );
+  };
+
+  const addBlogComment = (
+    postId: string,
+    commentData: { userName: string; comment: string; userAvatar?: string }
+  ) => {
+    const newComment: BlogComment = {
+      id: `c-${Date.now()}`,
+      postId,
+      userName: commentData.userName.trim() || 'Reader',
+      userAvatar: commentData.userAvatar,
+      comment: commentData.comment.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    setBlogs((prev) =>
+      prev.map((b) =>
+        b.id === postId
+          ? { ...b, comments: [newComment, ...(b.comments || [])] }
+          : b
+      )
+    );
+    logActivity('Article Commented', 'blog', `New comment on story ${postId} by ${newComment.userName}`, postId);
+  };
+
   const updateShippingMethod = (id: string, updates: Partial<ShippingMethod>) => {
     setShippingMethods((prev) =>
       prev.map((sm) => (sm.id === id ? { ...sm, ...updates } : sm))
@@ -788,6 +878,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setShippingMethods(INITIAL_SHIPPING_METHODS);
     setSettings(INITIAL_STORE_SETTINGS);
     setActivityLogs(INITIAL_ACTIVITY_LOGS);
+    setBlogs(INITIAL_BLOG_POSTS);
     setCurrency(INITIAL_STORE_SETTINGS.currency as CurrencyConfig);
     api.resetToFactoryDefaults().catch(() => {});
   };
@@ -804,6 +895,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         shippingMethods,
         settings,
         activityLogs,
+        blogs,
         currency,
         setCurrency,
         formatPrice,
@@ -832,6 +924,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateReviewStatus,
         replyToReview,
         deleteReview,
+        addBlogPost,
+        updateBlogPost,
+        deleteBlogPost,
+        likeBlogPost,
+        addBlogComment,
+        incrementBlogViews,
         updateShippingMethod,
         updateSettings,
         resetToFactoryDefaults,

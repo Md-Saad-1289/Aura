@@ -167,7 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (currentUser.role === 'admin' || currentUser.role === 'super_admin') return true;
 
     if (currentUser.role === 'manager') {
-      const allowed = ['view_dashboard', 'manage_products', 'manage_categories', 'manage_orders', 'manage_customers', 'manage_coupons', 'manage_shipping', 'view_analytics'];
+      const allowed = ['view_dashboard', 'manage_products', 'manage_categories', 'manage_orders', 'manage_customers', 'manage_coupons', 'manage_shipping', 'view_analytics', 'manage_blogs'];
       return allowed.includes(permission);
     }
 

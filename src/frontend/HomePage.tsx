@@ -10,25 +10,28 @@ import {
   TrendingUp,
   Star,
   Zap,
-  CheckCircle2
+  CheckCircle2,
+  BookOpen,
+  Clock
 } from 'lucide-react';
 import { Product, Category, StorefrontView } from '../types';
 import { useStore } from '../context/StoreContext';
 import { ProductCard } from './ProductCard';
 
 interface HomePageProps {
-  onNavigate: (view: StorefrontView, categoryId?: string, productId?: string) => void;
+  onNavigate: (view: StorefrontView, categoryId?: string, productId?: string, blogSlug?: string) => void;
   onQuickView: (product: Product) => void;
 }
 
 export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onQuickView }) => {
-  const { products, categories, formatPrice } = useStore();
+  const { products, categories, blogs, formatPrice } = useStore();
   const [activeTab, setActiveTab] = useState<'featured' | 'new' | 'bestsellers' | 'sale'>('featured');
 
   const featuredProducts = products.filter(p => p.isFeatured && p.status === 'active');
   const newArrivals = products.filter(p => p.isNewArrival && p.status === 'active');
   const bestSellers = products.filter(p => p.isBestSeller && p.status === 'active');
   const saleProducts = products.filter(p => p.isOnSale && p.status === 'active');
+  const publishedBlogs = blogs.filter(b => b.status === 'published').slice(0, 3);
 
   const tabProducts =
     activeTab === 'featured'
@@ -358,6 +361,80 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onQuickView }) =
           </div>
         </div>
       </section>
+
+      {/* Stories & Editorial Journal Section */}
+      {publishedBlogs.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-zinc-200/80 pb-5">
+            <div>
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase tracking-widest">
+                <BookOpen className="w-3.5 h-3.5" /> Atelier Dispatch
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-zinc-950 mt-1">
+                Stories from the Workshop
+              </h2>
+            </div>
+
+            <button
+              onClick={() => onNavigate('blog')}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-900 hover:text-amber-800 group"
+            >
+              <span>Explore All Articles</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {publishedBlogs.map((post) => (
+              <article
+                key={post.id}
+                onClick={() => onNavigate('blog-detail', undefined, undefined, post.slug || post.id)}
+                className="bg-white rounded-3xl overflow-hidden border border-zinc-200/80 shadow-2xs hover:shadow-md transition-all flex flex-col group cursor-pointer"
+              >
+                <div className="relative h-48 overflow-hidden bg-zinc-100">
+                  <img
+                    src={post.coverImage}
+                    alt={post.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-xs text-zinc-900 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-2xs">
+                    {post.category}
+                  </div>
+                  <div className="absolute bottom-3 right-3 bg-zinc-950/75 backdrop-blur-xs text-zinc-200 text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-amber-400" /> {post.readTime}
+                  </div>
+                </div>
+
+                <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                  <div className="space-y-2">
+                    <h3 className="text-base font-serif font-bold text-zinc-950 group-hover:text-amber-800 transition-colors line-clamp-2 leading-snug">
+                      {post.title}
+                    </h3>
+                    <p className="text-xs text-zinc-600 line-clamp-2 leading-relaxed">
+                      {post.excerpt}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 border-t border-zinc-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={post.author.avatar}
+                        alt={post.author.name}
+                        className="w-6 h-6 rounded-full object-cover border border-zinc-200"
+                      />
+                      <span className="text-[11px] font-bold text-zinc-800">{post.author.name}</span>
+                    </div>
+
+                    <span className="text-[11px] text-amber-800 font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                      Read <ChevronRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Customer Testimonials & Press */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
