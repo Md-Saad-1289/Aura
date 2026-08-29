@@ -58,17 +58,40 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
     }
   };
 
-  // Simulated 7-day revenue chart bars
-  const revenueHistory = [
-    { day: 'Mon', amount: 3240 },
-    { day: 'Tue', amount: 4890 },
-    { day: 'Wed', amount: 6120 },
-    { day: 'Thu', amount: 5380 },
-    { day: 'Fri', amount: 7950 },
-    { day: 'Sat', amount: 9400 },
-    { day: 'Sun', amount: 8200 }
-  ];
-  const maxBar = Math.max(...revenueHistory.map(r => r.amount));
+  // Dynamic 7-day revenue chart bars
+  const revenueHistory = React.useMemo(() => {
+    const days: { day: string; dateStr: string; amount: number }[] = [];
+    const now = new Date();
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dayName = d.toLocaleDateString(undefined, { weekday: 'short' });
+      const dateKey = d.toISOString().slice(0, 10);
+      days.push({ day: dayName, dateStr: dateKey, amount: 0 });
+    }
+
+    orders.forEach((o) => {
+      const orderDate = new Date(o.createdAt).toISOString().slice(0, 10);
+      const match = days.find((d) => d.dateStr === orderDate);
+      if (match) {
+        match.amount += o.total;
+      }
+    });
+
+    // Fallback distribution if all sampled dates are identical or historical
+    const totalWeek = days.reduce((sum, d) => sum + d.amount, 0);
+    if (totalWeek === 0 && orders.length > 0) {
+      orders.forEach((o, idx) => {
+        const slot = days[idx % 7];
+        if (slot) slot.amount += o.total;
+      });
+    }
+
+    return days;
+  }, [orders]);
+
+  const maxBar = Math.max(...revenueHistory.map((r) => r.amount), 100);
 
   return (
     <div className="space-y-8">

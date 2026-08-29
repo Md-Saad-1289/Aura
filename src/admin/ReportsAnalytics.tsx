@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   BarChart3,
   TrendingUp,
@@ -10,7 +10,9 @@ import {
   Award,
   ArrowUpRight,
   Sparkles,
-  Printer
+  Printer,
+  Package,
+  Layers
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
@@ -18,13 +20,46 @@ export const ReportsAnalytics: React.FC = () => {
   const { orders, products, formatPrice, settings } = useStore();
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'ytd' | 'all'>('30d');
 
-  const totalRevenue = orders.reduce((sum, o) => sum + (o.paymentStatus === 'paid' ? o.total : 0), 0);
-  const totalOrders = orders.length;
+  // Filter orders by selected timeRange
+  const filteredOrders = useMemo(() => {
+    const now = new Date();
+    return orders.filter((order) => {
+      const orderDate = new Date(order.createdAt);
+      if (isNaN(orderDate.getTime())) return true;
+
+      if (timeRange === '7d') {
+        const past7 = new Date(now);
+        past7.setDate(now.getDate() - 7);
+        return orderDate >= past7;
+      }
+      if (timeRange === '30d') {
+        const past30 = new Date(now);
+        past30.setDate(now.getDate() - 30);
+        return orderDate >= past30;
+      }
+      if (timeRange === 'ytd') {
+        return orderDate.getFullYear() === now.getFullYear();
+      }
+      return true; // 'all'
+    });
+  }, [orders, timeRange]);
+
+  const totalRevenue = filteredOrders.reduce(
+    (sum, o) => sum + (o.paymentStatus === 'paid' || o.status !== 'cancelled' ? o.total : 0),
+    0
+  );
+  const totalOrders = filteredOrders.length;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+  // Total items sold
+  const totalUnitsSold = filteredOrders.reduce(
+    (sum, o) => sum + o.items.reduce((iSum, it) => iSum + it.quantity, 0),
+    0
+  );
 
   // Category sales breakdown
   const categorySales: Record<string, { count: number; revenue: number }> = {};
-  orders.forEach((o) => {
+  filteredOrders.forEach((o) => {
     o.items.forEach((it) => {
       const cat = it.product.category || 'General';
       if (!categorySales[cat]) {
@@ -39,7 +74,7 @@ export const ReportsAnalytics: React.FC = () => {
 
   // Top products
   const productSales: Record<string, { name: string; brand: string; units: number; revenue: number; image: string }> = {};
-  orders.forEach((o) => {
+  filteredOrders.forEach((o) => {
     o.items.forEach((it) => {
       const pid = it.productId;
       if (!productSales[pid]) {
@@ -48,7 +83,7 @@ export const ReportsAnalytics: React.FC = () => {
           brand: it.product.brand,
           units: 0,
           revenue: 0,
-          image: it.product.images[0]
+          image: it.product.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=800&auto=format&fit=crop'
         };
       }
       productSales[pid].units += it.quantity;
@@ -64,14 +99,25 @@ export const ReportsAnalytics: React.FC = () => {
     const csvContent =
       'data:text/csv;charset=utf-8,' +
       'Product,Brand,Units Sold,Gross Revenue\n' +
-      topProducts.map((p) => `"${p.name}","${p.brand}",${p.units},${p.revenue}`).join('\n');
+      (topProducts.length > 0
+        ? topProducts.map((p) => `"${p.name}","${p.brand}",${p.units},${p.revenue}`).join('\n')
+        : 'No sales records in selected period,,,0');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `aura_analytics_report_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `aura_analytics_${timeRange}_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const getTimeRangeLabel = () => {
+    switch (timeRange) {
+      case '7d': return 'Past 7 Days';
+      case '30d': return 'Past 30 Days';
+      case 'ytd': return 'Year to Date';
+      case 'all': return 'All Time';
+    }
   };
 
   return (
@@ -83,11 +129,11 @@ export const ReportsAnalytics: React.FC = () => {
             Financial & Intelligence Reports
           </h1>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Audit commerce velocity, category dominance, and unit margins.
+            Audit commerce velocity, category dominance, and unit margins for {getTimeRangeLabel().toLowerCase()}.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Time range selector */}
           <div className="flex items-center bg-white border border-zinc-200 rounded-xl p-1 shadow-2xs">
             {[
@@ -101,7 +147,7 @@ export const ReportsAnalytics: React.FC = () => {
                 onClick={() => setTimeRange(t.id as any)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                   timeRange === t.id
-                    ? 'bg-zinc-950 text-white'
+                    ? 'bg-zinc-950 text-white shadow-2xs'
                     : 'text-zinc-600 hover:text-zinc-950'
                 }`}
               >
@@ -130,19 +176,25 @@ export const ReportsAnalytics: React.FC = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="p-6 bg-white rounded-3xl border border-zinc-200 shadow-2xs space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Total Net Revenue</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Net Volume ({getTimeRangeLabel()})</span>
           <p className="text-3xl font-mono font-bold text-zinc-950">{formatPrice(totalRevenue)}</p>
           <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-            <ArrowUpRight className="w-3.5 h-3.5" /> +24.8% vs annualized target
+            <ArrowUpRight className="w-3.5 h-3.5" /> +24.8% performance index
           </p>
         </div>
 
         <div className="p-6 bg-white rounded-3xl border border-zinc-200 shadow-2xs space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Average Cart Value</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Average Order Value</span>
           <p className="text-3xl font-mono font-bold text-zinc-950">{formatPrice(avgOrderValue)}</p>
-          <p className="text-[11px] text-zinc-500">Across {totalOrders} recorded checkouts</p>
+          <p className="text-[11px] text-zinc-500">Across {totalOrders} checkouts in period</p>
+        </div>
+
+        <div className="p-6 bg-white rounded-3xl border border-zinc-200 shadow-2xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Units Dispatched</span>
+          <p className="text-3xl font-mono font-bold text-zinc-950">{totalUnitsSold}</p>
+          <p className="text-[11px] text-zinc-500">Across {Object.keys(productSales).length} unique SKUs</p>
         </div>
 
         <div className="p-6 bg-white rounded-3xl border border-zinc-200 shadow-2xs space-y-2">
@@ -160,27 +212,31 @@ export const ReportsAnalytics: React.FC = () => {
             <h3 className="text-base font-serif font-bold text-zinc-950">
               Revenue by Discipline
             </h3>
-            <p className="text-xs text-zinc-500">Percentage distribution of gross volume</p>
+            <p className="text-xs text-zinc-500">Percentage distribution for {getTimeRangeLabel().toLowerCase()}</p>
           </div>
 
           <div className="space-y-4">
-            {Object.entries(categorySales).map(([category, data]) => {
-              const percent = Math.round((data.revenue / totalCategoryRev) * 100);
-              return (
-                <div key={category} className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-semibold">
-                    <span className="text-zinc-900">{category}</span>
-                    <span className="font-mono text-zinc-950">{formatPrice(data.revenue)} ({percent}%)</span>
+            {Object.keys(categorySales).length === 0 ? (
+              <p className="text-xs text-zinc-400 py-6 text-center">No orders registered in this time period.</p>
+            ) : (
+              Object.entries(categorySales).map(([category, data]) => {
+                const percent = Math.round((data.revenue / totalCategoryRev) * 100);
+                return (
+                  <div key={category} className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-zinc-900">{category}</span>
+                      <span className="font-mono text-zinc-950">{formatPrice(data.revenue)} ({percent}%)</span>
+                    </div>
+                    <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="bg-zinc-950 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-zinc-950 h-full rounded-full transition-all duration-500"
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -191,29 +247,33 @@ export const ReportsAnalytics: React.FC = () => {
               <h3 className="text-base font-serif font-bold text-zinc-950">
                 Top Performing Releases
               </h3>
-              <p className="text-xs text-zinc-500">Ranked by gross sales volume</p>
+              <p className="text-xs text-zinc-500">Ranked by gross sales in {getTimeRangeLabel().toLowerCase()}</p>
             </div>
             <Award className="w-5 h-5 text-amber-500" />
           </div>
 
           <div className="divide-y divide-zinc-150">
-            {topProducts.map((p, idx) => (
-              <div key={idx} className="py-3 flex items-center justify-between gap-4 text-xs">
-                <div className="flex items-center gap-3">
-                  <span className="w-6 text-center font-serif font-bold text-zinc-400 text-sm">
-                    #{idx + 1}
-                  </span>
-                  <img src={p.image} alt={p.name} className="w-12 h-12 rounded-xl object-cover bg-zinc-100 border border-zinc-200" />
-                  <div>
-                    <p className="font-bold text-zinc-900">{p.name}</p>
-                    <p className="text-[10px] text-zinc-400">{p.brand} • {p.units} units shipped</p>
+            {topProducts.length === 0 ? (
+              <p className="text-xs text-zinc-400 py-6 text-center">No sales recorded for this period.</p>
+            ) : (
+              topProducts.map((p, idx) => (
+                <div key={idx} className="py-3 flex items-center justify-between gap-4 text-xs">
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 text-center font-serif font-bold text-zinc-400 text-sm">
+                      #{idx + 1}
+                    </span>
+                    <img src={p.image} alt={p.name} className="w-12 h-12 rounded-xl object-cover bg-zinc-100 border border-zinc-200" />
+                    <div>
+                      <p className="font-bold text-zinc-900">{p.name}</p>
+                      <p className="text-[10px] text-zinc-400">{p.brand} • {p.units} units shipped</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-zinc-950 font-mono">{formatPrice(p.revenue)}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-zinc-950 font-mono">{formatPrice(p.revenue)}</p>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

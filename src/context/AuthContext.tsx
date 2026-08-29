@@ -104,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await api.register(name, email, password);
       if (res.success && res.user) {
         if (res.token) setAuthToken(res.token);
+        addCustomer(res.user);
         setCurrentUser(res.user);
         return { success: true, user: res.user };
       }

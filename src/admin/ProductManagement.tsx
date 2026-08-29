@@ -78,6 +78,11 @@ export const ProductManagement: React.FC = () => {
   const [newSpecKey, setNewSpecKey] = useState('');
   const [newSpecVal, setNewSpecVal] = useState('');
 
+  // Filtering & Pagination State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   // Filtering Logic
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
@@ -99,6 +104,49 @@ export const ProductManagement: React.FC = () => {
       return true;
     });
   }, [products, searchQuery, selectedCategory, selectedStatus, stockFilter]);
+
+  // Pagination calculation
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, currentPage, pageSize]);
+
+  // Handle select all
+  const isAllSelected = paginatedProducts.length > 0 && paginatedProducts.every((p) => selectedIds.includes(p.id));
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !paginatedProducts.some((p) => p.id === id)));
+    } else {
+      const pageIds = paginatedProducts.map((p) => p.id);
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
+  };
+
+  // Bulk action handlers
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    if (confirm(`Are you sure you want to delete ${selectedIds.length} selected products?`)) {
+      selectedIds.forEach((id) => deleteProduct(id));
+      setSelectedIds([]);
+    }
+  };
+
+  const handleBulkSetStatus = (status: ProductStatus) => {
+    if (selectedIds.length === 0) return;
+    selectedIds.forEach((id) => updateProduct(id, { status }));
+    setSelectedIds([]);
+  };
+
+  const handleBulkSetFeatured = (isFeatured: boolean) => {
+    if (selectedIds.length === 0) return;
+    selectedIds.forEach((id) => updateProduct(id, { isFeatured }));
+    setSelectedIds([]);
+  };
 
   // Inventory value computation
   const totalInventoryValue = useMemo(() => {
@@ -424,12 +472,66 @@ export const ProductManagement: React.FC = () => {
         </div>
       </div>
 
+      {/* Bulk Actions Banner */}
+      {selectedIds.length > 0 && (
+        <div className="bg-zinc-900 text-white px-5 py-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-lg animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <span className="bg-amber-400 text-zinc-950 font-bold px-2 py-0.5 rounded-full font-mono">
+              {selectedIds.length}
+            </span>
+            <span>artifacts selected</span>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap text-xs">
+            <button
+              onClick={() => handleBulkSetStatus('active')}
+              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-xl font-semibold transition-colors"
+            >
+              Set Active
+            </button>
+            <button
+              onClick={() => handleBulkSetStatus('draft')}
+              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-xl font-semibold transition-colors"
+            >
+              Set Draft
+            </button>
+            <button
+              onClick={() => handleBulkSetFeatured(true)}
+              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-xl font-semibold transition-colors"
+            >
+              Feature In Store
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold flex items-center gap-1 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete Selected</span>
+            </button>
+            <button
+              onClick={() => setSelectedIds([])}
+              className="px-3 py-1.5 text-zinc-400 hover:text-white transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Products Table */}
       <div className="bg-white rounded-3xl border border-zinc-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead>
               <tr className="bg-zinc-50/80 border-b border-zinc-200 text-zinc-400 uppercase text-[10px] tracking-wider">
+                <th className="py-3.5 px-4 w-10">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={handleToggleSelectAll}
+                    className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 cursor-pointer"
+                  />
+                </th>
                 <th className="py-3.5 px-4">Artifact</th>
                 <th className="py-3.5 px-4">SKU</th>
                 <th className="py-3.5 px-4">Category</th>
@@ -440,19 +542,30 @@ export const ProductManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-150">
-              {filteredProducts.length === 0 ? (
+              {paginatedProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-zinc-400">
-                    No products found matching your filters.
+                  <td colSpan={8} className="text-center py-12 text-zinc-400 text-xs">
+                    No products found matching your active filters.
                   </td>
                 </tr>
               ) : (
-                filteredProducts.map((product) => {
+                paginatedProducts.map((product) => {
                   const isOutOfStock = product.stock <= 0;
                   const isLowStock = product.stock > 0 && product.stock <= product.lowStockThreshold;
+                  const isChecked = selectedIds.includes(product.id);
 
                   return (
-                    <tr key={product.id} className="hover:bg-zinc-50/80 transition-colors">
+                    <tr key={product.id} className={`hover:bg-zinc-50/80 transition-colors ${isChecked ? 'bg-zinc-50/60' : ''}`}>
+                      {/* Checkbox */}
+                      <td className="py-3 px-4">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleSelect(product.id)}
+                          className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 cursor-pointer"
+                        />
+                      </td>
+
                       {/* Product Thumbnail + Name */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
@@ -482,11 +595,11 @@ export const ProductManagement: React.FC = () => {
 
                       {/* Price */}
                       <td className="py-3 px-4">
-                        <div className="font-bold text-zinc-950">
+                        <div className="font-bold text-zinc-950 font-mono">
                           {formatPrice(product.price)}
                         </div>
                         {product.compareAtPrice && (
-                          <div className="text-[10px] text-zinc-400 line-through">
+                          <div className="text-[10px] text-zinc-400 line-through font-mono">
                             {formatPrice(product.compareAtPrice)}
                           </div>
                         )}
@@ -565,6 +678,64 @@ export const ProductManagement: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination & Summary Bar */}
+        <div className="p-4 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3 text-zinc-500">
+            <span>
+              Showing {filteredProducts.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} to{' '}
+              {Math.min(currentPage * pageSize, filteredProducts.length)} of {filteredProducts.length} artifacts
+            </span>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px]">Per page:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-xs text-zinc-800 focus:outline-none"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-zinc-800 font-semibold transition-colors"
+            >
+              Previous
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+              <button
+                key={pg}
+                onClick={() => setCurrentPage(pg)}
+                className={`w-7 h-7 rounded-lg font-semibold text-xs transition-colors ${
+                  currentPage === pg
+                    ? 'bg-zinc-950 text-white'
+                    : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+                }`}
+              >
+                {pg}
+              </button>
+            ))}
+
+            <button
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-zinc-800 font-semibold transition-colors"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 

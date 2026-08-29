@@ -11,17 +11,25 @@ import {
   MapPin,
   ExternalLink,
   ChevronDown,
-  Filter
+  Filter,
+  Download,
+  Calendar,
+  CreditCard,
+  DollarSign
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
-import { Order, OrderStatus } from '../types';
+import { Order, OrderStatus, PaymentStatus } from '../types';
 import { PrintInvoiceModal } from './PrintInvoiceModal';
 
 export const OrderManagement: React.FC = () => {
-  const { orders, updateOrderStatus, updateOrderTracking, formatPrice, settings } = useStore();
+  const { orders, updateOrderStatus, updateOrderTracking, updateOrderPaymentStatus, formatPrice, settings } = useStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [paymentFilter, setPaymentFilter] = useState<string>('all');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // Tracking modal state
@@ -35,6 +43,19 @@ export const OrderManagement: React.FC = () => {
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
       if (statusFilter !== 'all' && order.status !== statusFilter) return false;
+      if (paymentFilter !== 'all' && order.paymentStatus !== paymentFilter) return false;
+      if (paymentMethodFilter !== 'all' && order.paymentMethod !== paymentMethodFilter) return false;
+
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        if (new Date(order.createdAt) < start) return false;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        if (new Date(order.createdAt) > end) return false;
+      }
 
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
@@ -47,7 +68,7 @@ export const OrderManagement: React.FC = () => {
 
       return true;
     });
-  }, [orders, statusFilter, searchQuery]);
+  }, [orders, statusFilter, paymentFilter, paymentMethodFilter, startDate, endDate, searchQuery]);
 
   const handleOpenTrackingModal = (order: Order) => {
     setTrackingModalOrder(order);
@@ -60,6 +81,25 @@ export const OrderManagement: React.FC = () => {
     if (!trackingModalOrder) return;
     updateOrderTracking(trackingModalOrder.id, trackingInput, carrierInput);
     setTrackingModalOrder(null);
+  };
+
+  const handleExportCSV = () => {
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      'Order Ref,Date,Customer,Email,City,Country,Items Count,Total,Payment Status,Payment Method,Fulfillment Status,Carrier,Tracking Number\n' +
+      filteredOrders
+        .map(
+          (o) =>
+            `"${o.orderNumber}","${new Date(o.createdAt).toISOString().slice(0, 10)}","${o.customer.name}","${o.customer.email}","${o.shippingAddress.city}","${o.shippingAddress.country}",${o.items.length},${o.total},"${o.paymentStatus}","${o.paymentMethod}","${o.status}","${o.carrier || ''}","${o.trackingNumber || ''}"`
+        )
+        .join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `aura_orders_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getStatusBadge = (status: OrderStatus) => {
@@ -80,6 +120,20 @@ export const OrderManagement: React.FC = () => {
     }
   };
 
+  const getPaymentBadge = (status: PaymentStatus) => {
+    switch (status) {
+      case 'paid':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'pending':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'refunded':
+        return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 'failed':
+      default:
+        return 'bg-rose-50 text-rose-700 border-rose-200';
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -89,39 +143,115 @@ export const OrderManagement: React.FC = () => {
             Order Fulfillment & Consignments
           </h1>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Manage dispatch statuses, assign tracking codes, and generate tax invoices.
+            Manage dispatch statuses, assign tracking codes, filter payment telemetry, and generate tax invoices.
           </p>
         </div>
+
+        <button
+          onClick={handleExportCSV}
+          className="px-3.5 py-2 bg-zinc-950 hover:bg-zinc-850 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors self-start sm:self-auto"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span>Export Orders (CSV)</span>
+        </button>
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-white p-4 rounded-2xl border border-zinc-200 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search by Order #, customer name, tracking..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl pl-10 pr-3 py-2 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:border-zinc-500"
-          />
+      <div className="bg-white p-4 rounded-2xl border border-zinc-200 shadow-2xs space-y-3">
+        <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
+          <div className="relative w-full md:w-80">
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search by Order #, customer, email, tracking..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl pl-10 pr-3 py-2 text-xs text-zinc-900 focus:bg-white focus:outline-none focus:border-zinc-500"
+            />
+          </div>
+
+          {/* Status Filter Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 md:pb-0">
+            {['all', 'new', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'].map((st) => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap capitalize transition-colors ${
+                  statusFilter === st
+                    ? 'bg-zinc-950 text-white shadow-2xs'
+                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                }`}
+              >
+                {st}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Status Filter Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 md:pb-0">
-          {['all', 'new', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'].map((st) => (
-            <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap capitalize transition-colors ${
-                statusFilter === st
-                  ? 'bg-zinc-950 text-white'
-                  : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
-              }`}
+        {/* Secondary Filters: Payment, Method, Date Range */}
+        <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-zinc-150 text-xs">
+          <div className="flex items-center gap-1.5">
+            <CreditCard className="w-3.5 h-3.5 text-zinc-400" />
+            <span className="text-zinc-500 font-semibold">Payment:</span>
+            <select
+              value={paymentFilter}
+              onChange={(e) => setPaymentFilter(e.target.value)}
+              className="bg-zinc-50 border border-zinc-200 rounded-lg px-2.5 py-1 text-xs font-medium text-zinc-800 focus:outline-none cursor-pointer"
             >
-              {st}
-            </button>
-          ))}
+              <option value="all">All Payment Statuses</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="failed">Failed</option>
+              <option value="refunded">Refunded</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <DollarSign className="w-3.5 h-3.5 text-zinc-400" />
+            <span className="text-zinc-500 font-semibold">Method:</span>
+            <select
+              value={paymentMethodFilter}
+              onChange={(e) => setPaymentMethodFilter(e.target.value)}
+              className="bg-zinc-50 border border-zinc-200 rounded-lg px-2.5 py-1 text-xs font-medium text-zinc-800 focus:outline-none cursor-pointer"
+            >
+              <option value="all">All Gateways</option>
+              <option value="cash_on_delivery">Cash on Delivery</option>
+              <option value="stripe">Card / Stripe</option>
+              <option value="apple_pay">Apple Pay</option>
+              <option value="bank_transfer">Wire Transfer</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5 ml-auto flex-wrap">
+            <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+            <span className="text-zinc-500 font-semibold">From:</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-xs text-zinc-800 focus:outline-none"
+            />
+            <span className="text-zinc-500 font-semibold">To:</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-xs text-zinc-800 focus:outline-none"
+            />
+            {(startDate || endDate || paymentFilter !== 'all' || paymentMethodFilter !== 'all') && (
+              <button
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                  setPaymentFilter('all');
+                  setPaymentMethodFilter('all');
+                }}
+                className="text-xs text-rose-600 hover:underline font-semibold ml-1"
+              >
+                Reset Filters
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -134,18 +264,18 @@ export const OrderManagement: React.FC = () => {
                 <th className="py-3.5 px-4">Order Ref</th>
                 <th className="py-3.5 px-4">Date</th>
                 <th className="py-3.5 px-4">Customer</th>
-                <th className="py-3.5 px-4">Destination</th>
+                <th className="py-3.5 px-4">Payment</th>
                 <th className="py-3.5 px-4">Total</th>
                 <th className="py-3.5 px-4">Tracking</th>
-                <th className="py-3.5 px-4">Status</th>
+                <th className="py-3.5 px-4">Fulfillment</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-150">
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-zinc-400">
-                    No orders match your filter criteria.
+                  <td colSpan={8} className="text-center py-12 text-zinc-400 text-xs">
+                    No orders match your active filter criteria.
                   </td>
                 </tr>
               ) : (
@@ -168,23 +298,30 @@ export const OrderManagement: React.FC = () => {
                       <p className="text-[10px] text-zinc-400">{order.customer.email}</p>
                     </td>
 
-                    <td className="py-3 px-4 text-zinc-600">
-                      {order.shippingAddress.city}, {order.shippingAddress.country}
+                    <td className="py-3 px-4">
+                      <div className="flex flex-col gap-1 items-start">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${getPaymentBadge(order.paymentStatus)}`}>
+                          {order.paymentStatus}
+                        </span>
+                        <span className="text-[10px] text-zinc-400 font-medium">
+                          {order.paymentMethod === 'cash_on_delivery' ? 'COD' : order.paymentMethod}
+                        </span>
+                      </div>
                     </td>
 
-                    <td className="py-3 px-4 font-bold text-zinc-950">
+                    <td className="py-3 px-4 font-bold text-zinc-950 font-mono">
                       {formatPrice(order.total)}
                     </td>
 
                     <td className="py-3 px-4">
                       {order.trackingNumber ? (
-                        <span className="font-mono text-[10px] text-zinc-700 bg-zinc-100 px-2 py-0.5 rounded">
+                        <span className="font-mono text-[10px] text-zinc-700 bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200">
                           {order.trackingNumber}
                         </span>
                       ) : (
                         <button
                           onClick={() => handleOpenTrackingModal(order)}
-                          className="text-[11px] text-blue-600 hover:underline font-medium"
+                          className="text-[11px] text-blue-600 hover:underline font-semibold"
                         >
                           + Assign ID
                         </button>
@@ -281,7 +418,7 @@ export const OrderManagement: React.FC = () => {
             </div>
 
             {/* Addresses */}
-            <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200">
                 <p className="font-bold text-zinc-400 uppercase text-[10px]">Shipping Destination</p>
                 <p className="font-bold text-zinc-900 mt-1">{selectedOrder.shippingAddress.fullName}</p>
@@ -295,6 +432,7 @@ export const OrderManagement: React.FC = () => {
                 <p className="font-bold text-zinc-900 mt-1">Carrier: {selectedOrder.carrier || 'FedEx Express'}</p>
                 <p className="text-zinc-600">Tracking: {selectedOrder.trackingNumber || 'Unassigned'}</p>
                 <p className="text-emerald-700 font-semibold capitalize">Status: {selectedOrder.status}</p>
+                <p className="text-zinc-500 font-mono text-[11px]">Payment: {selectedOrder.paymentStatus.toUpperCase()} ({selectedOrder.paymentMethod})</p>
               </div>
             </div>
 

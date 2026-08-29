@@ -61,6 +61,8 @@ interface StoreContextType {
 
   // Customer Actions
   updateCustomerStatus: (customerId: string, status: 'active' | 'blocked') => void;
+  updateCustomer: (customerId: string, updates: Partial<User>) => void;
+  deleteCustomer: (customerId: string) => void;
   addCustomer: (customer: Omit<User, 'id' | 'createdAt'>) => User;
 
   // Coupon Actions
@@ -507,14 +509,44 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     logActivity('Customer Status Updated', 'customer', `Customer ${customerId} set to ${status}`, customerId);
   };
 
+  const updateCustomer = (customerId: string, updates: Partial<User>) => {
+    setCustomers((prev) =>
+      prev.map((cust) => (cust.id === customerId ? { ...cust, ...updates } : cust))
+    );
+    api.updateUser(customerId, updates).catch(() => {});
+    logActivity('Customer Profile Updated', 'customer', `Updated client details for ID: ${customerId}`, customerId);
+  };
+
+  const deleteCustomer = (customerId: string) => {
+    const cust = customers.find((c) => c.id === customerId);
+    setCustomers((prev) => prev.filter((c) => c.id !== customerId));
+    if (cust) {
+      logActivity('Customer Removed', 'customer', `Removed customer profile: ${cust.name} (${cust.email})`, customerId);
+    }
+    api.deleteUser(customerId).catch(() => {});
+  };
+
   const addCustomer = (data: Omit<User, 'id' | 'createdAt'>): User => {
+    const existingIndex = customers.findIndex(
+      (c) => c.email.toLowerCase() === data.email.trim().toLowerCase()
+    );
+    if (existingIndex >= 0) {
+      const updated = { ...customers[existingIndex], ...data };
+      setCustomers((prev) => {
+        const next = [...prev];
+        next[existingIndex] = updated;
+        return next;
+      });
+      return updated;
+    }
+
     const newUser: User = {
       ...data,
       id: `usr-${Date.now()}`,
       createdAt: new Date().toISOString(),
       totalSpent: 0,
       orderCount: 0,
-      status: 'active',
+      status: data.status || 'active',
     };
     setCustomers((prev) => [...prev, newUser]);
     api.createUser(newUser).catch(() => {});
@@ -564,6 +596,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     if (!coupon.isActive) {
       return { valid: false, discount: 0, message: 'This promo code is inactive' };
+    }
+    const expiryDateStr = coupon.endDate || coupon.expiresAt || coupon.validUntil;
+    if (expiryDateStr && new Date(expiryDateStr) < new Date()) {
+      return { valid: false, discount: 0, message: 'This promo code has expired' };
     }
     if (coupon.usageLimit && coupon.usageCount >= coupon.usageLimit) {
       return { valid: false, discount: 0, message: 'This promo code has reached its usage limit' };
@@ -784,6 +820,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateOrderPaymentStatus,
         cancelOrder,
         updateCustomerStatus,
+        updateCustomer,
+        deleteCustomer,
         addCustomer,
         addCoupon,
         updateCoupon,
