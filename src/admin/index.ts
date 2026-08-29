@@ -12,3 +12,4 @@ export { ReportsAnalytics } from './ReportsAnalytics';
 export { ReviewManagement } from './ReviewManagement';
 export { SettingsManagement } from './SettingsManagement';
 export { ShippingManagement } from './ShippingManagement';
+export { RichEditorialEditor } from './RichEditorialEditor';

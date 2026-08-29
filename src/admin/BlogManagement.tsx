@@ -28,6 +28,7 @@ import {
 import { BlogPost, Product } from '../types';
 import { useStore } from '../context/StoreContext';
 import { useAuth } from '../context/AuthContext';
+import { RichEditorialEditor } from './RichEditorialEditor';
 
 const PRESET_COVERS = [
   'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1200&auto=format&fit=crop',
@@ -526,7 +527,7 @@ Explain the detailed engineering or historical context.`,
       {/* Editor / Create Story Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-zinc-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-zinc-200 my-8 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-3xl w-full max-w-5xl shadow-2xl border border-zinc-200 my-8 overflow-hidden flex flex-col max-h-[92vh]">
             {/* Modal Header */}
             <div className="p-5 bg-zinc-950 text-white flex items-center justify-between">
               <div>
@@ -684,103 +685,27 @@ Explain the detailed engineering or historical context.`,
                 </div>
               </div>
 
-              {/* Content Markdown Editor */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-zinc-800 flex items-center gap-2">
-                    <FileText className="w-3.5 h-3.5 text-zinc-500" />
-                    <span>Story Content (Markdown Supported)</span>
-                  </label>
+              {/* Rich Editorial & Monograph Studio Editor */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-800 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Story Content & Editorial Studio</span>
+                  </span>
+                  <span className="text-[10px] text-zinc-400 font-normal">
+                    Supports Markdown, Live Split Preview, Snippets & Product Artifacts
+                  </span>
+                </label>
 
-                  <div className="flex items-center gap-1 bg-zinc-100 p-0.5 rounded-lg text-xs font-semibold">
-                    <button
-                      type="button"
-                      onClick={() => setActiveEditorTab('edit')}
-                      className={`px-3 py-1 rounded-md transition-all ${
-                        activeEditorTab === 'edit' ? 'bg-white text-zinc-900 shadow-xs' : 'text-zinc-500'
-                      }`}
-                    >
-                      Markdown Editor
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveEditorTab('preview')}
-                      className={`px-3 py-1 rounded-md transition-all ${
-                        activeEditorTab === 'preview' ? 'bg-white text-zinc-900 shadow-xs' : 'text-zinc-500'
-                      }`}
-                    >
-                      Live Preview
-                    </button>
-                  </div>
-                </div>
-
-                {activeEditorTab === 'edit' ? (
-                  <div className="space-y-1.5">
-                    {/* Quick Markdown Toolbar */}
-                    <div className="flex flex-wrap items-center gap-1 p-1.5 bg-zinc-100 rounded-xl text-[11px] text-zinc-700">
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, content: formData.content + '\n## Heading Section' })}
-                        className="px-2 py-1 bg-white hover:bg-zinc-50 rounded border border-zinc-200 font-bold"
-                      >
-                        H2
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, content: formData.content + '\n### Subheading' })}
-                        className="px-2 py-1 bg-white hover:bg-zinc-50 rounded border border-zinc-200 font-semibold"
-                      >
-                        H3
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, content: formData.content + ' **bold text**' })}
-                        className="px-2 py-1 bg-white hover:bg-zinc-50 rounded border border-zinc-200 font-bold"
-                      >
-                        B
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, content: formData.content + ' *italic text*' })}
-                        className="px-2 py-1 bg-white hover:bg-zinc-50 rounded border border-zinc-200 italic"
-                      >
-                        I
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, content: formData.content + '\n> "Notable quotation here."' })}
-                        className="px-2 py-1 bg-white hover:bg-zinc-50 rounded border border-zinc-200"
-                      >
-                        Quote
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, content: formData.content + '\n* Bullet point item' })}
-                        className="px-2 py-1 bg-white hover:bg-zinc-50 rounded border border-zinc-200"
-                      >
-                        List
-                      </button>
-                    </div>
-
-                    <textarea
-                      rows={10}
-                      required
-                      value={formData.content}
-                      onChange={(e) => handleContentChange(e.target.value)}
-                      placeholder="Write your story content here in markdown..."
-                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 text-xs text-zinc-900 font-mono focus:outline-none focus:ring-1 focus:ring-amber-500 leading-relaxed"
-                    />
-                  </div>
-                ) : (
-                  <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-5 max-h-80 overflow-y-auto space-y-3">
-                    <h2 className="text-xl font-serif font-bold text-zinc-900">{formData.title || 'Untitled Essay'}</h2>
-                    <p className="text-xs text-zinc-500 italic">{formData.excerpt}</p>
-                    <hr className="border-zinc-200" />
-                    <div className="text-xs text-zinc-700 whitespace-pre-line leading-relaxed">
-                      {formData.content}
-                    </div>
-                  </div>
-                )}
+                <RichEditorialEditor
+                  value={formData.content}
+                  onChange={(val) => handleContentChange(val)}
+                  title={formData.title}
+                  excerpt={formData.excerpt}
+                  category={formData.category}
+                  authorName={formData.authorName}
+                  products={products}
+                />
               </div>
 
               {/* Author Dossier & Tags */}
